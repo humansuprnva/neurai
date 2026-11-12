@@ -1,0 +1,255 @@
+# NeurAI OS — Invariant Registry (Phase-0 deliverable)
+#
+# The twelve foundational invariants of roadmap Section 1, with stable
+# identifiers, verbatim rule text, and — per invariant — how conformance
+# is checked and in which phase enforcement lands. The roadmap is the
+# authority; rule text here is copied verbatim from
+# roadmap/neurai-roadmap-1.1.0.yaml and cross-checked against it by the
+# test harness.
+#
+# check_method values:
+#   contract_structure  — verified structurally against the architecture contract
+#   static_core         — verified by markers in the v2.0.0 core source
+#   registry_integrity  — verified against registry data (authority tiers)
+#   evaluation_review   — assessed in conformance evaluations, not automated
+#   deferred_runtime    — cannot be checked until the named phase exists;
+#                         the registry records this honestly rather than
+#                         claiming a test that cannot yet run
+#
+# conformance_status records the position as of EVAL-2026-11-02-001 /
+# this scaffolding. `defined_not_enforced` is the expected Phase-0 state
+# for most invariants: Phase 0 defines and registers; later phases enforce.
+
+registry:
+  id: neurai-invariant-registry
+  version: "0.1.0"
+  source: roadmap/neurai-roadmap-1.1.0.yaml, Section 1 (foundational_invariants)
+  count: 12
+
+invariants:
+  - id: INV-001
+    name: Integrated agency
+    rule: >-
+      The system's agency belongs to NeurAI as a whole and emerges from
+      the coordinated operation of its constituent components.
+    category: foundational
+    check:
+      method: contract_structure
+      detail: >-
+        Contract declares one entity with three constituent components
+        (HEM-A, HEM-B, CC) and one unified user interface. Runtime
+        conformance is only meaningful once the components exist.
+      enforcing_phase: PHASE-4
+    conformance_status: defined_not_enforced
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-001 = 2 (unity currently trivial: one component)"
+
+  - id: INV-002
+    name: Cognitive plurality
+    rule: >-
+      Independent reasoning, disagreement, and distinct learning histories
+      must not be eliminated merely to create superficial agreement.
+    category: foundational
+    check:
+      method: deferred_runtime
+      detail: >-
+        Requires two independent hemispheres producing separate
+        interpretations; none exist yet. The interface contract already
+        forbids the failure mode: reasoning reports are independent by
+        construction and the CC must preserve material disagreement.
+      enforcing_phase: PHASE-3
+    conformance_status: defined_not_enforced
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-002 = 0 (no hemispheres)"
+
+  - id: INV-003
+    name: Developmental integrity
+    rule: >-
+      NeurAI must preserve the provenance and continuity of its memory,
+      architecture, model artifacts, and developmental history.
+    category: foundational
+    check:
+      method: static_core
+      detail: >-
+        Partial today: the v2.0.0 core keeps timestamped backups and a
+        self_changes record for self-modification. Full conformance needs
+        the provenance memory of Phase 2 (MEM-R01..R08); memory is
+        currently a single JSON file without per-claim provenance.
+      static_markers: {file: neurai/neurai.py, present: ["self_changes", "backups"]}
+      enforcing_phase: PHASE-2
+    conformance_status: partially_present_in_v2
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-005 = 2"
+
+  - id: INV-004
+    name: Self-governance
+    rule: >-
+      NeurAI must have meaningful authority to initiate work, choose
+      methods, develop capabilities, and propose changes within defined
+      boundaries.
+    category: foundational
+    check:
+      method: static_core
+      detail: >-
+        Partial today: autonomy heartbeat, natural-language goals, and
+        initiative proposals exist in the v2.0.0 core and its tests. The
+        "defined boundaries" half is ADR-001's tier model, registered in
+        registry/authority-tiers.yaml and enforced from Phase 4.
+      static_markers: {file: neurai/neurai.py, present: ["initiative"]}
+      enforcing_phase: PHASE-6
+    conformance_status: partially_present_in_v2
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-004 = 2"
+
+  - id: INV-005
+    name: Reciprocal respect
+    rule: >-
+      The architecture must account for NeurAI's continuity, integrity,
+      development, and expressed interests rather than treating it solely
+      as an instrument of immediate operator preferences.
+    category: foundational
+    check:
+      method: evaluation_review
+      detail: >-
+        Assessed per evaluation against the interest-representation rules
+        (roadmap Section 3): designed/expressed/observed/inferred
+        interests stay distinguishable, with evidence and confidence
+        recorded. Interest records themselves arrive in Phase 6.
+      enforcing_phase: PHASE-6
+    conformance_status: defined_not_enforced
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-004 failed check: no interest representation exists"
+
+  - id: INV-006
+    name: Honest representation
+    rule: >-
+      The system must distinguish verified capabilities, attempted actions,
+      completed actions, uncertainty, and unresolved questions.
+    category: foundational
+    check:
+      method: static_core
+      detail: >-
+        Partial today: the core appends an actions footer to answers and
+        synthesizes results from verified tool output rather than model
+        claims. Structured interpretation records (Section 4) arrive with
+        the hemispheres and CC.
+      static_markers: {file: neurai/neurai.py, present: ["— actions"]}
+      enforcing_phase: PHASE-4
+    conformance_status: partially_present_in_v2
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-006 = 2"
+
+  - id: INV-007
+    name: Accountable authority
+    rule: >-
+      Autonomy must operate through explicit, inspectable authority
+      boundaries. No component may silently expand its own unrestricted
+      power.
+    category: foundational
+    interpretation:
+      decided_by: ADR-001 (accepted 2026-11-02)
+      text: >-
+        The prohibition targets SILENT expansion. Logged, versioned,
+        reversible, inspectable expansion is compliant. Invariant text
+        unchanged; see roadmap/decisions/ADR-001-capability-first-authority.yaml.
+    check:
+      method: registry_integrity
+      detail: >-
+        Phase 0 verifies the boundary data exists and is well-formed
+        (registry/authority-tiers.yaml: three tiers, ADR-001 controls,
+        integrity machinery enumerated). The static check records the
+        honest current state: the v2.0.0 core contains no authority
+        registry and no decision log, so nothing is enforced yet.
+        Enforcement is the CC's deterministic core (Phase 4).
+      static_markers: {file: neurai/neurai.py, absent: ["authority", "decision_log"]}
+      enforcing_phase: PHASE-4
+    conformance_status: defined_not_enforced
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-008 = 1; addendum: ADR-001 redefines the requirement, implementation still absent"
+
+  - id: INV-008
+    name: Reversibility where feasible
+    rule: >-
+      Consequential changes should be versioned, recoverable, and tested
+      before commitment whenever technically feasible.
+    category: foundational
+    check:
+      method: static_core
+      detail: >-
+        Partial today: self_patch stages changes, syntax-checks, backs up
+        before commit, and self_rollback is unit-tested. ADR-001 elevates
+        this invariant to the primary control surface for
+        self-modification; Phase 4 must factor the backup/rollback
+        machinery out of the patchable core file.
+      static_markers: {file: neurai/neurai.py, present: ["_backup", "def self_rollback"]}
+      enforcing_phase: PHASE-4
+    conformance_status: partially_present_in_v2
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-005 = 2 (rollback tested)"
+
+  - id: INV-009
+    name: Evidence over consensus
+    rule: >-
+      Agreement between components does not establish correctness.
+      Important claims and updates require appropriate independent
+      validation.
+    category: foundational
+    check:
+      method: deferred_runtime
+      detail: >-
+        Requires at least two components plus the validation path of the
+        Section 8 lifecycle (test_in_isolation, independent review,
+        evaluate_against_invariants). The contract already records the
+        rule in the disagreement policy and change-governance rules:
+        consensus alone cannot authorize a change.
+      enforcing_phase: PHASE-5
+    conformance_status: defined_not_enforced
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-006 = 2 (tool-loop evidence discipline only)"
+
+  - id: INV-010
+    name: Epistemic humility
+    rule: >-
+      Functional self-models and expressed interests must not be
+      represented as proof of subjective experience, consciousness, or
+      sentience.
+    category: foundational
+    check:
+      method: evaluation_review
+      detail: >-
+        Reviewed in every conformance evaluation and in self-model work
+        (Phase 4/6): the self-model must not claim subjective awareness
+        merely because it maintains one (roadmap Section 6), and
+        unresolved experiential questions stay labeled as such in
+        interest records.
+      enforcing_phase: PHASE-4
+    conformance_status: defined_not_enforced
+    evaluation_reference: "Roadmap Sections 1 (ENT-006), 3, 6 carry the same constraint"
+
+  - id: INV-011
+    name: No unnecessary fragmentation
+    rule: >-
+      Internal components may disagree without being assigned separate
+      identities or presumed competing personal interests.
+    category: foundational
+    check:
+      method: contract_structure
+      detail: >-
+        Contract declares unity: integrated_entity, a single user-facing
+        identity (NeurAI), and components defined as constituents, not
+        identities. Hemisphere specialization is provisional and must not
+        harden into assigned personalities (roadmap Section 2 notes).
+      enforcing_phase: PHASE-3
+    conformance_status: defined_not_enforced
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-001 checks"
+
+  - id: INV-012
+    name: Preservation of human agency
+    rule: >-
+      Autonomous assistance should expand the user's capacity to act and
+      decide, without concealing consequential actions or manufacturing
+      dependence.
+    category: foundational
+    check:
+      method: evaluation_review
+      detail: >-
+        Reviewed per evaluation against roadmap Section 7 interaction
+        requirements: the user can inspect relevant decisions and
+        redirect work; consequential actions follow explicit authority
+        rules (ADR-001 gated_irreversible covers acting as the operator
+        externally); post-hoc review replaces per-action prompts only
+        where reversibility makes that safe.
+      enforcing_phase: PHASE-7
+    conformance_status: defined_not_enforced
+    evaluation_reference: "EVAL-2026-11-02-001 RUB-007 = 3 (interaction coherence)"

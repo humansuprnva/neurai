@@ -1,0 +1,57 @@
+# NeurAI OS — Architecture Decision Index (Phase-0)
+#
+# Index of architecture decision records in the Section 12 format. Full
+# records live as individual files in roadmap/decisions/ and are never
+# duplicated here; this index carries the summary fields plus the path.
+# New decisions: write the full record under roadmap/decisions/, then
+# add an index entry here.
+
+index:
+  id: neurai-decision-index
+  version: "0.1.0"
+  storage_of_full_records: roadmap/decisions/
+
+decisions:
+  - decision_id: ADR-001
+    date: "2026-11-02"
+    title: Capability-first authority model for self-modification
+    status: accepted
+    decided_by: Levi Nord (operator)
+    context: >-
+      Roadmap 1.0.0 set a withholding default for self-modification
+      (per-action review/authorization), while the shipped v2.0.0 lets
+      the model invoke self_patch and sys_write directly with only
+      staging, syntax checks, backups, and rollback as controls
+      (EVAL-2026-11-02-001: RUB-003 = 1, RUB-008 = 1). The operator
+      questioned whether approval gating fits a single-user, local-only
+      system whose consequential state is versioned and recoverable,
+      and noted the tension with INV-004 / AG-005 developmental agency.
+    alternatives:
+      - "ALT-A: Roadmap 1.0.0 as written (approval-gated self-modification) — rejected"
+      - "ALT-B: Unrestricted self-modification (v2.0.0 status quo) — rejected"
+      - "ALT-C: Capability-first, with reversibility and audit as the control surface — chosen"
+    chosen_option: ALT-C
+    rationale: >-
+      Authority is organized by reversibility and blast radius, not by
+      topic. Anything fully captured by versioned state may be committed
+      autonomously — including own source code and governance documents —
+      under mandatory staging, validation, backup, change records, and an
+      append-only decision log. Gates remain only where reversibility
+      does not exist or can be destroyed: the integrity machinery
+      (gated_integrity) and effects outside versioned state
+      (gated_irreversible). INV-007's prohibition targets silent
+      expansion; logged, versioned, reversible, inspectable expansion is
+      compliant.
+    affected_invariants: [INV-007, INV-008, INV-004]
+    known_tradeoffs:
+      - Bad autonomous commits can land before any human review; mitigated by staged validation, tested rollback, last-known-good fallback.
+      - Many small individually-safe changes can drift the system over time; mitigated by periodic conformance evaluation against the decision log.
+      - Untrusted content channels (web, email, third-party files) would make injected instructions steering self-modification a live risk this model does not by itself mitigate.
+      - In the single-file core, tier separation is logical, not physical; factoring the integrity machinery into a separately protected component is required Phase-4 follow-up.
+    review_trigger: >-
+      The first of: (a) any incident involving the integrity machinery;
+      (b) any misclassification of an irreversible action as reversible;
+      (c) introduction of untrusted content channels; or (d) the next
+      full conformance evaluation.
+    amends: roadmap/neurai-roadmap-1.0.0.yaml -> roadmap/neurai-roadmap-1.1.0.yaml (authority.default_policy, CHG-007 scrutiny)
+    record_path: roadmap/decisions/ADR-001-capability-first-authority.yaml

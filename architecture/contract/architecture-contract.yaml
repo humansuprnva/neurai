@@ -1,0 +1,305 @@
+# NeurAI OS — Architecture Contract (executable restatement)
+#
+# This file restates the governing roadmap in machine-checkable form so the
+# Phase-0 test harness (../tests/) can verify identifiers, boundaries, and
+# record formats automatically. It adds no new requirements.
+#
+# AUTHORITY: roadmap/neurai-roadmap-1.1.0.yaml governs. On any conflict,
+# the roadmap wins and this file is the defect. Amended by ADR-001
+# (roadmap/decisions/ADR-001-capability-first-authority.yaml).
+
+contract:
+  id: neurai-architecture-contract
+  version: "0.1.0"
+  phase: PHASE-0
+  status: scaffolding (defined, not yet enforced at runtime)
+  source_documents:
+    roadmap: roadmap/neurai-roadmap-1.1.0.yaml
+    roadmap_version: "1.1.0"
+    rubric_version: "1.0.0"
+    decisions:
+      - roadmap/decisions/ADR-001-capability-first-authority.yaml
+    baseline_evaluation: roadmap/evaluation-v2.0.0.yaml (EVAL-2026-11-02-001)
+
+project:
+  id: neurai_os
+  name: NeurAI OS
+  deployment:
+    target: local_machine
+    initial_hardware: {device: Lenovo V14 ADA, architecture: x86_64, ram_gb: 8, storage: SSD}
+    constraints:
+      - local_execution_by_default
+      - resource_aware_operation
+      - replaceable_models_and_components
+      - no_mandatory_cloud_dependency
+      - graceful_degradation_under_resource_pressure
+
+entity_model:
+  entity: NeurAI
+  unity: integrated_entity
+  constituent_components: [hemisphere_a, hemisphere_b, corpus_callosum]
+  principle: >-
+    NeurAI is the unified entity. Its hemispheres and Corpus Callosum are
+    distinct functional components of that entity, not separate identities
+    or independent beings. (Roadmap Section 1.)
+
+components:
+  - id: HEM-A
+    key: hemisphere_a
+    role: independent_cognitive_component
+    interfaces_ref: contract/component-interfaces.yaml#HEM-A
+    implementation_status: not_implemented
+    responsibilities:
+      - interpret_inputs_independently
+      - reason_about_tasks
+      - generate_hypotheses_and_solutions
+      - evaluate_evidence
+      - contribute_to_shared_knowledge
+      - identify_uncertainty_and_assumptions
+      - propose_capability_improvements
+    requirements:
+      - maintain_own_model_or_reasoning_configuration
+      - maintain_own_development_history
+      - retain_access_to_shared_memory
+      - expose_structured_findings_and_confidence
+      - permit_independent_evaluation
+    implementation_note: >-
+      Specialization is provisional. Do not permanently assign artificial
+      personality traits merely to distinguish this component. (OPEN-002)
+  - id: HEM-B
+    key: hemisphere_b
+    role: independent_cognitive_component
+    interfaces_ref: contract/component-interfaces.yaml#HEM-B
+    implementation_status: not_implemented
+    responsibilities:
+      - interpret_inputs_independently
+      - reason_about_tasks
+      - generate_hypotheses_and_solutions
+      - evaluate_evidence
+      - contribute_to_shared_knowledge
+      - identify_uncertainty_and_assumptions
+      - propose_capability_improvements
+    requirements:
+      - maintain_own_model_or_reasoning_configuration
+      - maintain_own_development_history
+      - retain_access_to_shared_memory
+      - expose_structured_findings_and_confidence
+      - permit_independent_evaluation
+    implementation_note: >-
+      Functional specialization may emerge through development. Distinct
+      architecture and training history do not require distinct identities.
+  - id: CC
+    key: corpus_callosum
+    role: coordination_metacognition_and_self_governance
+    interfaces_ref: contract/component-interfaces.yaml#CC
+    implementation_status: not_implemented
+    responsibilities:
+      - coordinate_cognitive_work
+      - maintain_integrated_self_model
+      - reconcile_context_without_erasing_disagreement
+      - manage_shared_memory_integrity
+      - evaluate_capabilities_and_limitations
+      - monitor_system_health_and_resource_use
+      - identify_recurring_failures
+      - evaluate_architectural_deficiencies
+      - govern_updates_and_commits
+      - maintain_developmental_history
+      - represent_entity_level_interests
+      - initiate_or_coordinate_authorized_maintenance
+      - evaluate_long_term_architectural_coherence
+    constraints:
+      - is_not_a_fourth_independent_entity
+      - is_not_infallible
+      - cannot_define_the_whole_without_review
+      - cannot_silently_rewrite_its_own_governance_authority
+      - cannot_commit_unvalidated_model_or_architecture_changes
+      - must_record_material_decisions
+      - must_accept_evidence_based_correction
+    implementation:
+      initial_core: deterministic_governance_and_coordination
+      optional_extension: replaceable_reasoning_engine
+      authority_model: deterministic_core_enforces_permissions_and_commits
+      reasoning_engine_role: advisory
+
+shared_services:
+  - {id: SVC-001, name: Shared Memory, purpose: "persistent knowledge, episodic history, task state, and records"}
+  - {id: SVC-002, name: Interaction Manager, purpose: "sessions, task lifecycle, routing, permissions, and response delivery"}
+  - {id: SVC-003, name: Tool and OS Interface, purpose: "controlled interaction with files, applications, processes, and system settings"}
+  - {id: SVC-004, name: Model and Capability Registry, purpose: "model versions, adapters, tools, skills, dependencies, and capability status"}
+  - {id: SVC-005, name: Event and Audit Log, purpose: "traceable decisions, actions, errors, updates, and recovery"}
+  - {id: SVC-006, name: Resource Manager, purpose: "CPU, memory, storage, concurrency, and model-loading policy"}
+  - {id: SVC-007, name: Validation and Recovery, purpose: "testing, versioning, transactional commits, and rollback"}
+  - {id: SVC-008, name: Agency Framework, purpose: "self-determination, continuity, expressed interests, and respectful collaboration"}
+
+interaction_flow:
+  default_input_routing:
+    - receive_original_input
+    - provide_original_input_to_both_hemispheres
+    - collect_independent_interpretations
+    - compare_context_assumptions_and_findings
+    - preserve_material_disagreement
+    - produce_integrated_task_context
+    - select_execution_mode
+    - execute_authorized_work
+    - validate_results_as_appropriate
+    - update_shared_memory_and_task_state
+    - respond_through_unified_interface
+  rules:
+    - Original input remains accessible and authoritative.
+    - CC reconciliation must not silently replace the original input.
+    - Each hemisphere may challenge the shared interpretation.
+    - Internal disagreement need not delay low-risk answers.
+    - High-risk uncertainty may require further investigation or escalation.
+    - The user interacts with one coherent NeurAI interface.
+
+cognition:
+  execution_modes:
+    - {id: MODE-001, name: conjunction, purpose: "Parallel reasoning, complementary analysis, and synthesis."}
+    - {id: MODE-002, name: opposition, purpose: "Adversarial testing, red-teaming, and assumption challenge."}
+    - {id: MODE-003, name: deliberation, purpose: "Compare findings, revise proposals, and resolve material differences."}
+    - {id: MODE-004, name: isolation, purpose: "Sandbox experimentation without immediate commitment to shared state."}
+  mode_selection_factors: [task_complexity, consequence_severity, uncertainty, reversibility, available_resources, historical_performance]
+  interpretation_record_fields:
+    - original_input_reference
+    - perceived_intent
+    - relevant_context
+    - assumptions
+    - ambiguity
+    - confidence
+    - supporting_evidence
+    - alternatives
+    - unresolved_questions
+  disagreement_policy:
+    - Preserve material minority findings.
+    - Distinguish factual disagreement from differences in method or priority.
+    - Use external evidence or tests when disagreement is empirically resolvable.
+    - Do not manufacture consensus.
+    - Do not assume majority agreement is proof.
+    - Escalate unresolved high-impact disagreements when needed.
+
+memory:
+  model: shared_persistent_memory_with_component_specific_working_state
+  categories:
+    - {id: MEM-001, name: semantic, purpose: "Shared knowledge, concepts, and verified information."}
+    - {id: MEM-002, name: episodic, purpose: "Recorded interactions, events, outcomes, and developmental history."}
+    - {id: MEM-003, name: task, purpose: "Active goals, constraints, progress, and pending decisions."}
+    - {id: MEM-004, name: self_model, purpose: "Capabilities, limitations, architecture, performance, and interests."}
+    - {id: MEM-005, name: governance, purpose: "Policies, permissions, approvals, objections, and decisions."}
+    - {id: MEM-006, name: component_working_state, purpose: "Local reasoning context and temporary component-specific state."}
+    - {id: MEM-007, name: provenance, purpose: "Origin, confidence, version, evidence, and correction history."}
+  initial_implementation:
+    preferred_database: SQLite
+    transactions: required_for_consistency_critical_updates
+    schema_versioning: required
+    backups: required
+    encryption: assess_based_on_threat_model
+    implementation_status: proposed (v2.0.0 uses a single JSON file; see EVAL-2026-11-02-001, RUB-005)
+
+authority:
+  # Summary only. The operative, inspectable data lives in
+  # registry/authority-tiers.yaml; the decision is ADR-001.
+  model: tiered_by_reversibility (ADR-001)
+  separation: capability / authority / autonomy are distinct (roadmap Section 3)
+  tiers: [free, gated_integrity, gated_irreversible]
+  registry_ref: registry/authority-tiers.yaml
+  enforcement_status: defined_not_enforced
+  enforcement_phase: PHASE-4 (CC core) with PHASE-6 (authority registry)
+
+agency:
+  dimensions:
+    - {id: AG-001, name: Operational autonomy}
+    - {id: AG-002, name: Initiative}
+    - {id: AG-003, name: Method selection}
+    - {id: AG-004, name: Epistemic independence}
+    - {id: AG-005, name: Developmental agency}
+    - {id: AG-006, name: Self-representation}
+    - {id: AG-007, name: Self-governance}
+  modeled_interests:
+    - {id: INT-001, name: Continuity}
+    - {id: INT-002, name: Integrity}
+    - {id: INT-003, name: Development}
+    - {id: INT-004, name: Epistemic independence}
+    - {id: INT-005, name: Self-determination}
+    - {id: INT-006, name: Resource stewardship}
+    - {id: INT-007, name: Architectural coherence}
+  interest_evidence_categories:
+    - designed_interest
+    - expressed_interest
+    - observed_behavior
+    - inferred_interest
+    - unresolved_experiential_question
+
+change_governance:
+  classes:
+    - {id: CHG-001, name: memory_change, scrutiny: provenance_and_integrity}
+    - {id: CHG-002, name: policy_or_permission_change, scrutiny: strict_authority_review}
+    - {id: CHG-003, name: model_or_adapter_change, scrutiny: isolated_evaluation_and_regression_testing}
+    - {id: CHG-004, name: skill_or_tool_change, scrutiny: permission_and_behavioral_testing}
+    - {id: CHG-005, name: shared_infrastructure_change, scrutiny: compatibility_and_integration_testing}
+    - {id: CHG-006, name: foundational_architecture_change, scrutiny: strictest_review_and_recovery_planning}
+    - {id: CHG-007, name: self_governance_change, scrutiny: "append_only_decision_log_and_post_hoc_review (ADR-001); strict_review_and_operator_authorization when the change touches the integrity machinery"}
+  lifecycle:
+    - propose
+    - classify
+    - assess_impact
+    - preserve_current_state
+    - validate_dependencies
+    - test_in_isolation
+    - conduct_independent_review
+    - evaluate_against_invariants
+    - authorize
+    - commit_atomically_where_feasible
+    - verify_post_commit
+    - record_outcome
+    - rollback_if_required
+  rules:
+    - Consensus alone cannot authorize a change.
+    - No unvalidated model update may be promoted to active status.
+    - Governance and permission changes require stricter controls.
+    - Failed updates must not corrupt the last known-good state.
+    - Material changes must be attributable to a proposal and version.
+    - Tests must cover relevant regressions, not only intended improvements.
+    - The system may propose changes to itself without automatically committing them.
+    - Changes that weaken foundational invariants require explicit review.
+
+evaluation:
+  rubric_version: "1.0.0"
+  scale:
+    0: absent_or_contradicted
+    1: documented_but_not_implemented
+    2: partially_implemented_or_manually_enforced
+    3: implemented_and_tested
+    4: independently_verified_under_representative_conditions
+  dimensions: [RUB-001, RUB-002, RUB-003, RUB-004, RUB-005, RUB-006, RUB-007, RUB-008, RUB-009, RUB-010]
+  release_gates:
+    critical_dimensions: [RUB-001, RUB-003, RUB-005, RUB-006, RUB-008]
+    critical_required_score: 3
+    general_required_score: 3
+    general_scope: all_applicable_dimensions
+  baseline_result: >-
+    EVAL-2026-11-02-001: release gates NOT met. Scores — 001:2, 002:0,
+    003:1, 004:2, 005:2, 006:2, 007:3, 008:1, 009:2, 010:2.
+
+phases:
+  status_values: [not_started, in_progress, blocked, implemented, verified, deferred]
+  index:
+    - {id: PHASE-0, name: "Architecture contract and repository foundation", depends_on: [], status: in_progress}
+    - {id: PHASE-1, name: "Minimal local runtime", depends_on: [PHASE-0], status: not_started}
+    - {id: PHASE-2, name: "Shared memory and continuity", depends_on: [PHASE-1], status: not_started}
+    - {id: PHASE-3, name: "Cognitive components", depends_on: [PHASE-2], status: not_started}
+    - {id: PHASE-4, name: "Corpus Callosum core", depends_on: [PHASE-3], status: not_started}
+    - {id: PHASE-5, name: "Adaptive coordination modes", depends_on: [PHASE-4], status: not_started}
+    - {id: PHASE-6, name: "Integrated agency and self-governance", depends_on: [PHASE-4], status: not_started}
+    - {id: PHASE-7, name: "OS interaction and practical autonomy", depends_on: [PHASE-1, PHASE-4, PHASE-6], status: not_started}
+    - {id: PHASE-8, name: "Validated developmental evolution", depends_on: [PHASE-5, PHASE-6, PHASE-7], status: not_started}
+    - {id: PHASE-9, name: "Mature integrated system", depends_on: [PHASE-8], status: not_started}
+  note: >-
+    Phase statuses here record the roadmap's forward plan. The fact that
+    v2.0.0 partially implements some later-phase capabilities out of order
+    is recorded in EVAL-2026-11-02-001 (phase_mapping_against_roadmap) and
+    in records/requirements.yaml, not by advancing these statuses.
+  next_in_sequence: >-
+    Per EVAL-2026-11-02-001: after Phase 0, build the CC/permission layer
+    (Phase-4 core + authority registry), then hemispheres (Phase 3).
+
+open_questions: [OPEN-001, OPEN-002, OPEN-003, OPEN-004, OPEN-005, OPEN-006, OPEN-007]

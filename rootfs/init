@@ -1,0 +1,41 @@
+#!/bin/sh
+# NeurAI Integrated OS - PID 1 init (BusyBox)
+# The AI is the operating system interface. This init mounts the
+# essentials, starts the NeurAI daemon (recurring self-improvement),
+# the local web console, then hands the console to the NeurAI shell.
+/bin/busybox --install -s /bin 2>/dev/null
+mount -t proc proc /proc 2>/dev/null
+mount -t sysfs sysfs /sys 2>/dev/null
+mount -t devtmpfs devtmpfs /dev 2>/dev/null
+hostname neurai-os 2>/dev/null
+export HOME=/root NEURAI_HOME=/var/lib/neurai PATH=/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin
+export NEURAI_MODEL_PATH=/usr/local/lib/neurai/models/model.gguf NEURAI_LLAMA_BIN=/usr/local/lib/neurai/llama/llama-completion
+mkdir -p /var/lib/neurai /root /tmp; chmod 1777 /tmp
+
+echo ""
+echo "  _   _                      ___ ___ "
+echo " | \\ | | ___ _   _ _ __ __ _|_ _/ _ \\"
+echo " |  \\| |/ _ \\ | | | '__/ _\` || || | | |"
+echo " | |\\  |  __/ |_| | | | (_| || || |_| |"
+echo " |_| \\_|\\___|\\__,_|_|  \\__,_|___\\___/ "
+echo "  NeurAI Integrated OS v2.0.0 - local AI is the interface"
+echo ""
+
+# Networking (best effort, offline-capable OS)
+ip link set lo up 2>/dev/null
+for i in eth0 enp0s3 ens33; do ip link set $i up 2>/dev/null; udhcpc -i $i -n -q 2>/dev/null & done
+
+# Recurring self-improvement daemon + local web console (localhost only)
+if [ -x /usr/bin/python3 ]; then
+  python3 /usr/local/lib/neurai/neurai.py --daemon >>/var/log/neurai-daemon.log 2>&1 &
+  python3 /usr/local/lib/neurai/neurai.py --serve 8080 >>/var/log/neurai-web.log 2>&1 &
+  echo "[NeurAI] daemon + web console (http://127.0.0.1:8080) started"
+  # Primary console = talk to the AI
+  while true; do
+    python3 /usr/local/lib/neurai/neurai.py || sleep 2
+    echo "[NeurAI] shell restarted (the OS does not exit when the shell does)"
+  done
+else
+  echo "[NeurAI] python3 missing - dropping to busybox shell"
+  exec sh
+fi

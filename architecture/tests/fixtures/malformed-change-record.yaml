@@ -1,0 +1,13 @@
+# Malformed example change record. Must FAIL tests/validate_records.py.
+# Defects:
+#   1. required field `rollback_reference` is missing (Section 12)
+#   2. `affected_components` is a string, not a list
+change_id: CHG-EXAMPLE-BAD
+parent_version: "2.0.0"
+artifact: neurai/neurai.py
+origin: example fixture
+rationale: Demonstrates malformed-record detection for the Phase-0 harness.
+affected_components: "CC"
+tests_run: []
+results: none
+approval_status: free tier

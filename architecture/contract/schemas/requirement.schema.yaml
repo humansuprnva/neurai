@@ -1,0 +1,17 @@
+# Record schema: requirement (roadmap Section 12)
+record_type: requirement
+source: roadmap/neurai-roadmap-1.1.0.yaml, Section 12 (records.requirement)
+fields:
+  id: {type: string, required: true, pattern: "^[A-Z]+-[A-Z0-9-]+$"}
+  statement: {type: string, required: true}
+  priority: {type: string, required: true, enum: [P0, P1, P2, P3]}
+  status: {type: string, required: true, enum: [not_started, in_progress, blocked, implemented, verified, deferred]}
+  acceptance_criteria: {type: list, required: true, min_items: 1}
+  verification_method: {type: string, required: true}
+  dependencies: {type: list, required: true}
+  mandatory: {type: boolean, required: true, note: "Phase-0 acceptance: proposed and mandatory requirements must be distinguishable. Roadmap invariants and critical requirements are mandatory; provisional implementation choices are not."}
+  source: {type: string, required: false, note: "Roadmap section or evaluation the requirement originates from."}
+  evidence: {type: list, required: false, note: "Evidence references. Per the project operating rules, a requirement may not be marked verified without recorded evidence."}
+rules:
+  - status verified requires a non-empty evidence list
+  - ids are unique across the requirement tracker

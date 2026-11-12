@@ -1,0 +1,114 @@
+# NeurAI OS — Authority Registry (Phase-0 data)
+#
+# ADR-001's capability-first authority model as explicit, inspectable
+# data, per its authority_registry_rule: "Capabilities, tier assignments,
+# and grants are explicit, inspectable data. Any change to a tier
+# assignment is itself a decision-log event."
+#
+# STATUS: defined_not_enforced. Nothing in the shipped v2.0.0 reads this
+# file. Phase 4 (CC deterministic core) turns this data into enforcement;
+# Phase 6 completes the registry with grants and delegated permissions
+# (AG-013). Changing any tier assignment here before enforcement exists
+# is still a governance act: record it as an ADR or a decision entry in
+# records/, never silently.
+
+registry:
+  id: neurai-authority-registry
+  version: "0.1.0"
+  model: tiered_by_reversibility
+  decided_by: ADR-001 (accepted 2026-11-02, Levi Nord)
+  record_path: roadmap/decisions/ADR-001-capability-first-authority.yaml
+  enforcement_status: defined_not_enforced
+  enforcement_phase: PHASE-4
+  separation: >-
+    Capability (what a component can technically do), authority (what it
+    is permitted to do), and autonomy (what it may decide and execute
+    independently) are distinct. This registry records authority;
+    capability lives in SVC-004 registrations; autonomy policy follows
+    from the tier of each action.
+
+tiers:
+  - tier: free
+    summary: >-
+      Any action whose effects are fully captured by versioned state and
+      verified reversible.
+    scope_includes:
+      - own_source_code
+      - configuration
+      - skills
+      - memory_content
+      - governance_documents (subject to the decision-log rule)
+    requirements:
+      - staged_validation_before_commit
+      - backup_or_version_snapshot_before_commit
+      - change_record_created
+      - post_hoc_review_available
+    authorization: none_per_action (controls above are mandatory instead)
+  - tier: gated_integrity
+    summary: >-
+      The integrity machinery itself — the machinery that makes the free
+      tier safe. Edits here can destroy the reversibility and
+      auditability every other tier depends on.
+    scope_includes:
+      - audit_and_event_log_store (SVC-005 store)
+      - backup_store
+      - rollback_mechanism (SVC-007 commit/rollback)
+      - authority_registry_enforcement_code (CC.enforce_authority)
+      - decision_log_mechanism
+    requirements:
+      - strict_review
+      - operator_authorization
+    authorization: operator, per change
+  - tier: gated_irreversible
+    summary: >-
+      Effects outside versioned state that cannot be undone. Where no
+      rollback exists, approval substitutes for it.
+    scope_includes:
+      - destroying_unversioned_data
+      - destructive_disk_operations
+      - external_transmission_of_private_data
+      - spending
+      - third_party_communication_as_the_operator
+    requirements:
+      - operator_authorization_per_action_class_policy
+    authorization: operator, per action-class policy (OPEN-004, OPEN-007)
+
+governance_self_modification:
+  rule: >-
+    Changes to governance documents and to tier assignments are permitted
+    in the free tier ONLY as append-only decision-log entries recording
+    the prior text, the new text, and the rationale. They take effect
+    immediately and remain permanently inspectable.
+  exception: >-
+    Changes to the decision-log mechanism itself are gated_integrity.
+  change_class: CHG-007 (scrutiny as amended by ADR-001)
+
+integrity_machinery:
+  note: >-
+    The gated_integrity scope, enumerated so Phase 4 can factor these
+    into a separately protected component. ADR-001 records why: in the
+    current single-file core, tier separation is logical, not physical —
+    a free-tier patch can still edit the backup/rollback code in the
+    same file. That factoring is required follow-up work (Phase 4)
+    before ADR-001 can be scored as implemented.
+  components:
+    - {name: audit_log_store, service: SVC-005, current_state: "episode log inside the memory JSON; not append-only-protected"}
+    - {name: backup_store, service: SVC-007, current_state: "timestamped file backups under the data volume; code lives in neurai/neurai.py"}
+    - {name: rollback_mechanism, service: SVC-007, current_state: "self_rollback in neurai/neurai.py; unit-tested; same file as the patch path"}
+    - {name: registry_enforcement_code, service: CC.enforce_authority, current_state: "does not exist; this file is data only"}
+    - {name: decision_log_mechanism, service: SVC-005, current_state: "does not exist; self_changes list is a partial precursor"}
+  future_protection: >-
+    The installed system already carries a physically separate integrity
+    volume (see roadmap/deployment-host.md), reserved as this
+    machinery's protected home in Phase 4. This Phase-0 scaffolding only
+    names that destination; it implements no access to the volume.
+
+grants: []
+  # Delegated permissions and their changes are recorded here from
+  # Phase 6 onward (AG-013). Empty by design at Phase 0.
+
+review_trigger: >-
+  Revisit ADR-001 at the first of: (a) any incident involving the
+  integrity machinery; (b) any misclassification of an irreversible
+  action as reversible; (c) introduction of untrusted content channels;
+  or (d) the next full conformance evaluation.

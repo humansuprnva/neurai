@@ -1,0 +1,20 @@
+# Record schema: change record (roadmap Section 12)
+record_type: change_record
+source: roadmap/neurai-roadmap-1.1.0.yaml, Section 12 (records.change_record)
+storage: records/changes.yaml (append-only list)
+fields:
+  change_id: {type: string, required: true}
+  parent_version: {type: string, required: true}
+  artifact: {type: string, required: true}
+  origin: {type: string, required: true}
+  rationale: {type: string, required: true}
+  affected_components: {type: list, required: true}
+  tests_run: {type: list, required: true}
+  results: {type: string, required: true}
+  approval_status: {type: string, required: true, note: "For free-tier changes under ADR-001 this records the tier classification and decision-log reference rather than a per-action approval."}
+  rollback_reference: {type: string, required: true, note: "Backup/snapshot reference that makes the change reversible (INV-008); gated_irreversible changes must state why no rollback exists and which operator authorization covers them."}
+  proposal_reference: {type: string, required: false, note: "The change proposal (Section 8) this record completes."}
+  decision_log_reference: {type: string, required: false, note: "Required for governance changes and authority tier changes (ADR-001)."}
+rules:
+  - Every committed change has exactly one change record.
+  - Failed updates must not corrupt the last known-good state; a rollback produces its own record linked by rollback_reference.

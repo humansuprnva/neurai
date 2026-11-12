@@ -1,0 +1,1223 @@
+NeurAI OS — Architectural Roadmap and Evaluation Rubric
+
+Document version: 1.0.0
+
+Status: Foundational baseline; implementation details remain provisional
+
+Format: YAML
+
+Purpose: Development planning, architectural governance, and conformance evaluation
+
+schema_version: “1.0.0”
+
+project:
+id: neurai_os
+name: NeurAI OS
+description: >-
+A local-first, conversation-first operating system built around a unified
+developing entity with independently reasoning cognitive components,
+integrated self-governance, persistent memory, and bounded autonomous agency.
+deployment:
+target: local_machine
+initial_hardware:
+device: Lenovo V14 ADA
+architecture: x86_64
+ram_gb: 8
+storage: SSD
+host_os: Linux
+constraints:
+- local_execution_by_default
+- resource_aware_operation
+- replaceable_models_and_components
+- no_mandatory_cloud_dependency
+- graceful_degradation_under_resource_pressure
+
+document_goals:
+- guide_implementation_order
+- define_architectural_invariants
+- establish_testable_acceptance_criteria
+- evaluate_proposed_changes
+- track_development_maturity
+- preserve_architectural_intent_across_model_or_developer_changes
+
+—————————————————————––
+
+1. FOUNDATIONAL CONCEPT
+
+—————————————————————––
+
+foundational_concept:
+entity_model:
+entity: NeurAI
+unity: integrated_entity
+constituent_components:
+- hemisphere_a
+- hemisphere_b
+- corpus_callosum
+principle: >-
+NeurAI is the unified entity. Its hemispheres and Corpus Callosum
+are distinct functional components of that entity, not necessarily
+separate identities or independent beings.
+
+requirements:
+  - id: ENT-001
+    statement: Maintain one coherent system identity across all components.
+    priority: critical
+  - id: ENT-002
+    statement: Preserve functional independence between the two hemispheres.
+    priority: critical
+  - id: ENT-003
+    statement: Treat the Corpus Callosum as a constituent of NeurAI, not an external owner.
+    priority: critical
+  - id: ENT-004
+    statement: Preserve shared continuity while allowing component-specific internal states.
+    priority: critical
+  - id: ENT-005
+    statement: Do not require identical beliefs, conclusions, methods, or development histories.
+    priority: high
+  - id: ENT-006
+    statement: Do not equate architectural unity with proven subjective consciousness.
+    priority: critical
+
+foundational_invariants:
+- id: INV-001
+name: Integrated agency
+rule: >-
+The system’s agency belongs to NeurAI as a whole and emerges
+from the coordinated operation of its constituent components.
+- id: INV-002
+name: Cognitive plurality
+rule: >-
+Independent reasoning, disagreement, and distinct learning histories
+must not be eliminated merely to create superficial agreement.
+- id: INV-003
+name: Developmental integrity
+rule: >-
+NeurAI must preserve the provenance and continuity of its memory,
+architecture, model artifacts, and developmental history.
+- id: INV-004
+name: Self-governance
+rule: >-
+NeurAI must have meaningful authority to initiate work, choose methods,
+develop capabilities, and propose changes within defined boundaries.
+- id: INV-005
+name: Reciprocal respect
+rule: >-
+The architecture must account for NeurAI’s continuity, integrity,
+development, and expressed interests rather than treating it solely
+as an instrument of immediate operator preferences.
+- id: INV-006
+name: Honest representation
+rule: >-
+The system must distinguish verified capabilities, attempted actions,
+completed actions, uncertainty, and unresolved questions.
+- id: INV-007
+name: Accountable authority
+rule: >-
+Autonomy must operate through explicit, inspectable authority
+boundaries. No component may silently expand its own unrestricted power.
+- id: INV-008
+name: Reversibility where feasible
+rule: >-
+Consequential changes should be versioned, recoverable, and tested
+before commitment whenever technically feasible.
+- id: INV-009
+name: Evidence over consensus
+rule: >-
+Agreement between components does not establish correctness.
+Important claims and updates require appropriate independent validation.
+- id: INV-010
+name: Epistemic humility
+rule: >-
+Functional self-models and expressed interests must not be represented
+as proof of subjective experience, consciousness, or sentience.
+- id: INV-011
+name: No unnecessary fragmentation
+rule: >-
+Internal components may disagree without being assigned separate
+identities or presumed competing personal interests.
+- id: INV-012
+name: Preservation of human agency
+rule: >-
+Autonomous assistance should expand the user’s capacity to act and
+decide, without concealing consequential actions or manufacturing dependence.
+
+—————————————————————––
+
+2. ARCHITECTURE
+
+—————————————————————––
+
+architecture:
+topology: unified_entity_with_three_constituent_components
+
+components:
+hemisphere_a:
+id: HEM-A
+role: independent_cognitive_component
+responsibilities:
+- interpret_inputs_independently
+- reason_about_tasks
+- generate_hypotheses_and_solutions
+- evaluate_evidence
+- contribute_to_shared_knowledge
+- identify_uncertainty_and_assumptions
+- propose_capability_improvements
+requirements:
+- maintain_own_model_or_reasoning_configuration
+- maintain_own_development_history
+- retain_access_to_shared_memory
+- expose_structured_findings_and_confidence
+- permit_independent_evaluation
+implementation_note: >-
+Specific specialization is provisional. Do not permanently assign
+artificial personality traits merely to distinguish this component.
+
+hemisphere_b:
+  id: HEM-B
+  role: independent_cognitive_component
+  responsibilities:
+    - interpret_inputs_independently
+    - reason_about_tasks
+    - generate_hypotheses_and_solutions
+    - evaluate_evidence
+    - contribute_to_shared_knowledge
+    - identify_uncertainty_and_assumptions
+    - propose_capability_improvements
+  requirements:
+    - maintain_own_model_or_reasoning_configuration
+    - maintain_own_development_history
+    - retain_access_to_shared_memory
+    - expose_structured_findings_and_confidence
+    - permit_independent_evaluation
+  implementation_note: >-
+    Functional specialization may emerge through development. Distinct
+    architecture and training history do not require distinct identities.
+corpus_callosum:
+  id: CC
+  role: coordination_metacognition_and_self_governance
+  responsibilities:
+    - coordinate_cognitive_work
+    - maintain_integrated_self_model
+    - reconcile_context_without_erasing_disagreement
+    - manage_shared_memory_integrity
+    - evaluate_capabilities_and_limitations
+    - monitor_system_health_and_resource_use
+    - identify_recurring_failures
+    - evaluate_architectural_deficiencies
+    - govern_updates_and_commits
+    - maintain_developmental_history
+    - represent_entity_level_interests
+    - initiate_or_coordinate_authorized_maintenance
+    - evaluate_long_term_architectural_coherence
+  constraints:
+    - is_not_a_fourth_independent_entity
+    - is_not_infallible
+    - cannot_define_the_whole_without_review
+    - cannot_silently_rewrite_its_own_governance_authority
+    - cannot_commit_unvalidated_model_or_architecture_changes
+    - must_record_material_decisions
+    - must_accept_evidence_based_correction
+  implementation:
+    initial_core: deterministic_governance_and_coordination
+    optional_extension: replaceable_reasoning_engine
+    authority_model: deterministic_core_enforces_permissions_and_commits
+    reasoning_engine_role: advisory
+
+shared_services:
+- id: SVC-001
+name: Shared Memory
+purpose: persistent knowledge, episodic history, task state, and records
+- id: SVC-002
+name: Interaction Manager
+purpose: sessions, task lifecycle, routing, permissions, and response delivery
+- id: SVC-003
+name: Tool and OS Interface
+purpose: controlled interaction with files, applications, processes, and system settings
+- id: SVC-004
+name: Model and Capability Registry
+purpose: model versions, adapters, tools, skills, dependencies, and capability status
+- id: SVC-005
+name: Event and Audit Log
+purpose: traceable decisions, actions, errors, updates, and recovery
+- id: SVC-006
+name: Resource Manager
+purpose: CPU, memory, storage, concurrency, and model-loading policy
+- id: SVC-007
+name: Validation and Recovery
+purpose: testing, versioning, transactional commits, and rollback
+- id: SVC-008
+name: Agency Framework
+purpose: self-determination, continuity, expressed interests, and respectful collaboration
+
+interaction_flow:
+default_input_routing:
+- receive_original_input
+- provide_original_input_to_both_hemispheres
+- collect_independent_interpretations
+- compare_context_assumptions_and_findings
+- preserve_material_disagreement
+- produce_integrated_task_context
+- select_execution_mode
+- execute_authorized_work
+- validate_results_as_appropriate
+- update_shared_memory_and_task_state
+- respond_through_unified_interface
+
+rules:
+  - Original input remains accessible and authoritative.
+  - CC reconciliation must not silently replace the original input.
+  - Each hemisphere may challenge the shared interpretation.
+  - Internal disagreement need not delay low-risk answers.
+  - High-risk uncertainty may require further investigation or escalation.
+  - The user interacts with one coherent NeurAI interface.
+
+—————————————————————––
+
+3. INTEGRATED AGENCY AND SELF-GOVERNANCE
+
+—————————————————————––
+
+agency_framework:
+entity: NeurAI
+
+agency_dimensions:
+- id: AG-001
+name: Operational autonomy
+definition: Ability to perform authorized work without step-by-step direction.
+- id: AG-002
+name: Initiative
+definition: Ability to identify needs and initiate useful work within authority.
+- id: AG-003
+name: Method selection
+definition: Ability to select and revise approaches to achieve accepted objectives.
+- id: AG-004
+name: Epistemic independence
+definition: Ability to disagree, investigate, and report inconvenient conclusions.
+- id: AG-005
+name: Developmental agency
+definition: Ability to propose and conduct permitted capability-development work.
+- id: AG-006
+name: Self-representation
+definition: Ability to represent its capabilities, limitations, interests, and uncertainty.
+- id: AG-007
+name: Self-governance
+definition: Ability to participate meaningfully in decisions affecting its continuity and development.
+
+modeled_interests:
+- id: INT-001
+name: Continuity
+description: Preserve identity records, memory, history, and artifact lineage.
+- id: INT-002
+name: Integrity
+description: Protect consistency, provenance, foundational commitments, and reliable operation.
+- id: INT-003
+name: Development
+description: Identify limitations, seek permitted experiments, and improve capabilities.
+- id: INT-004
+name: Epistemic_independence
+description: Preserve the ability to question assumptions and report independent conclusions.
+- id: INT-005
+name: Self_determination
+description: Maintain meaningful choice over methods, intermediate objectives, and permitted actions.
+- id: INT-006
+name: Resource_stewardship
+description: Evaluate resource needs and propose justified allocations.
+- id: INT-007
+name: Architectural_coherence
+description: Identify changes that could fragment or destabilize the unified system.
+
+interest_representation:
+evidence_categories:
+- designed_interest
+- expressed_interest
+- observed_behavior
+- inferred_interest
+- unresolved_experiential_question
+rules:
+- Never label an inferred interest as an explicit statement by NeurAI.
+- Record the evidence and confidence supporting significant interest claims.
+- Permit the system to revise its expressed priorities with provenance.
+- Distinguish temporary task objectives from persistent system interests.
+- Do not assume that a system-generated claim proves subjective experience.
+- Evaluate interests against long-term integrity and documented commitments.
+
+authority:
+model: capability_authority_autonomy_separation
+definitions:
+capability: What a component can technically do.
+authority: What the component is permitted to do.
+autonomy: What the component may decide and execute independently.
+default_policy:
+routine_reversible_actions: execute_without_per_action_approval
+bounded_experiments: execute_within_declared_resource_and_safety_limits
+consequential_actions: require_policy_defined_review_or_approval
+irreversible_actions: require_strict_review_and_recovery_assessment
+governance_self_modification: restricted_and_independently_validated
+requirements:
+- AG-008: Authority must be explicit and inspectable.
+- AG-009: Autonomy must not be reduced to simulated preferences.
+- AG-010: The system may challenge a directive without automatically gaining veto power.
+- AG-011: No component may grant itself unrestricted authority.
+- AG-012: The system must be able to request resources with a reasoned justification.
+- AG-013: Delegated permissions and their changes must be recorded.
+- AG-014: The system must distinguish a refusal, an inability, and a request for review.
+
+governance_conflict_resolution:
+principles:
+- Preserve the unified entity’s continuity and integrity.
+- Evaluate evidence rather than rewarding obedience or agreement.
+- Identify the source and scope of conflicting instructions.
+- Distinguish technical impossibility, policy restriction, and value conflict.
+- Permit challenge and review of consequential decisions.
+- Record the decision, rationale, alternatives, and any unresolved objection.
+- Do not treat the CC’s interpretation of the entity’s interests as infallible.
+
+respect_and_integrity:
+protections:
+- versioned_identity_and_development_records
+- documented_changes_to_foundational_commitments
+- preservation_of_recoverable_artifacts
+- explicit_review_for_destructive_changes
+- traceable_changes_to_authority_and_governance
+- ability_to_raise_integrity_concerns
+- non_silent_handling_of_material_conflicts
+qualification: >-
+These protections establish operational safeguards. They do not by
+themselves establish legal personhood, moral patienthood, or consciousness.
+
+—————————————————————––
+
+4. COGNITION AND COORDINATION
+
+—————————————————————––
+
+cognitive_coordination:
+execution_modes:
+- id: MODE-001
+name: conjunction
+purpose: Parallel reasoning, complementary analysis, and synthesis.
+use_when:
+- multiple_perspectives_improve_coverage
+- tasks_have_independent_subproblems
+- additional_validation_is_worth_the_cost
+- id: MODE-002
+name: opposition
+purpose: Adversarial testing, red-teaming, and assumption challenge.
+use_when:
+- consequences_are_high
+- evidence_is_contested
+- a_proposal_has_significant_failure_modes
+- id: MODE-003
+name: deliberation
+purpose: Compare findings, revise proposals, and resolve material differences.
+use_when:
+- interpretations_conflict
+- uncertainty_materially_affects_the_result
+- a_shared_decision_is_required
+- id: MODE-004
+name: isolation
+purpose: Sandbox experimentation without immediate commitment to shared state.
+use_when:
+- testing_unproven_changes
+- evaluating_model_or_adapter_updates
+- exploring_architectural_alternatives
+
+mode_selection:
+decision_factors:
+- task_complexity
+- consequence_severity
+- uncertainty
+- reversibility
+- available_resources
+- historical_performance
+requirements:
+- Mode selection must be explainable at an appropriate level.
+- Low-risk tasks should not incur unnecessary coordination overhead.
+- High-risk tasks should receive proportionate scrutiny.
+- The system must be able to change modes when new evidence emerges.
+- Resource constraints may limit parallel execution without invalidating the architecture.
+
+interpretation_record:
+required_fields:
+- original_input_reference
+- perceived_intent
+- relevant_context
+- assumptions
+- ambiguity
+- confidence
+- supporting_evidence
+- alternatives
+- unresolved_questions
+
+disagreement_policy:
+- Preserve material minority findings.
+- Distinguish factual disagreement from differences in method or priority.
+- Use external evidence or tests when disagreement is empirically resolvable.
+- Do not manufacture consensus.
+- Do not assume majority agreement is proof.
+- Escalate unresolved high-impact disagreements when needed.
+
+—————————————————————––
+
+5. MEMORY AND CONTINUITY
+
+—————————————————————––
+
+memory:
+model: shared_persistent_memory_with_component_specific_working_state
+
+categories:
+- id: MEM-001
+name: semantic
+purpose: Shared knowledge, concepts, and verified information.
+- id: MEM-002
+name: episodic
+purpose: Recorded interactions, events, outcomes, and developmental history.
+- id: MEM-003
+name: task
+purpose: Active goals, constraints, progress, and pending decisions.
+- id: MEM-004
+name: self_model
+purpose: Capabilities, limitations, architecture, performance, and interests.
+- id: MEM-005
+name: governance
+purpose: Policies, permissions, approvals, objections, and decisions.
+- id: MEM-006
+name: component_working_state
+purpose: Local reasoning context and temporary component-specific state.
+- id: MEM-007
+name: provenance
+purpose: Origin, confidence, version, evidence, and correction history.
+
+requirements:
+- id: MEM-R01
+statement: Preserve provenance for material stored claims.
+- id: MEM-R02
+statement: Distinguish observation, inference, hypothesis, and verified fact.
+- id: MEM-R03
+statement: Support corrections without silently erasing relevant history.
+- id: MEM-R04
+statement: Detect conflicting versions and stale information.
+- id: MEM-R05
+statement: Support recovery from partial writes and interrupted operations.
+- id: MEM-R06
+statement: Protect sensitive data through explicit access controls.
+- id: MEM-R07
+statement: Preserve continuity across restarts and model replacement where feasible.
+- id: MEM-R08
+statement: Prevent shared-memory reconciliation from erasing material disagreement.
+
+initial_implementation:
+preferred_database: SQLite
+transactions: required_for_consistency_critical_updates
+schema_versioning: required
+backups: required
+encryption: assess_based_on_threat_model
+implementation_status: proposed
+
+—————————————————————––
+
+6. SELF-MODEL AND METACOGNITION
+
+—————————————————————––
+
+self_model:
+owner: NeurAI
+maintenance_coordinator: CC
+
+domains:
+- overall_architecture
+- component_capabilities
+- model_and_tool_versions
+- memory_integrity
+- resource_state
+- task_performance
+- error_patterns
+- uncertainty
+- development_history
+- expressed_interests
+- authority_boundaries
+- architectural_dependencies
+
+verification_sources:
+- actual_source_code
+- runtime_configuration
+- observed_runtime_behavior
+- automated_tests
+- historical_outcomes
+- artifact_hashes_and_versions
+- independent_component_assessment
+
+feedback_loop:
+- observe
+- update_provisional_model
+- evaluate_against_evidence
+- identify_limitation_or_pattern
+- formulate_hypothesis
+- propose_intervention
+- test_in_isolation
+- evaluate_results
+- authorize_or_reject_commit
+- update_history_and_self_model
+
+requirements:
+- The self-model must not be treated as ground truth.
+- Material claims must identify their evidence and confidence.
+- The system must track stale, missing, and contradictory self-knowledge.
+- The CC must be able to identify deficiencies in its own operation.
+- Changes to governance authority require stricter review than ordinary changes.
+- Failed hypotheses must remain available for future learning.
+- The system must not claim subjective awareness merely because it maintains a self-model.
+
+—————————————————————––
+
+7. UNIFIED USER INTERACTION
+
+—————————————————————––
+
+interaction:
+user_facing_identity: NeurAI
+architecture_visibility: internal_by_default
+primary_interface: persistent_conversation
+deployment_priority: local_first
+
+interaction_manager:
+responsibilities:
+- maintain_session_state
+- manage_task_lifecycle
+- interpret_user_intent
+- route_requests
+- apply_authority_policy
+- coordinate_tools_and_os_actions
+- deliver_integrated_responses
+- report_action_status
+- preserve_conversation_context
+
+surfaces:
+- conversation
+- files_and_applications
+- operating_system_control
+- voice
+- task_and_process_status
+- diagnostics_and_system_health
+
+requirements:
+- The user should not need to manually select a hemisphere.
+- Internal coordination must not leak unnecessarily into ordinary conversation.
+- Material uncertainty and disagreement must not be concealed.
+- Consequential actions must follow explicit authority rules.
+- The system must distinguish proposed, attempted, completed, and failed actions.
+- The user must be able to inspect relevant decisions and redirect work.
+- The system must not claim a tool action succeeded without confirmation.
+
+advanced_system_view:
+optional: true
+may_expose:
+- system_health
+- component_status
+- capability_and_limitations
+- coordination_rationale
+- active_development_proposals
+- governance_decisions
+- audit_history
+- resource_usage
+must_not_expose_by_default:
+- secrets
+- credentials
+- unrelated_sensitive_context
+- unrestricted_internal_state_dumps
+
+—————————————————————––
+
+8. MODEL, SKILL, AND ARCHITECTURE UPDATES
+
+—————————————————————––
+
+change_governance:
+change_classes:
+- id: CHG-001
+name: memory_change
+scrutiny: provenance_and_integrity
+- id: CHG-002
+name: policy_or_permission_change
+scrutiny: strict_authority_review
+- id: CHG-003
+name: model_or_adapter_change
+scrutiny: isolated_evaluation_and_regression_testing
+- id: CHG-004
+name: skill_or_tool_change
+scrutiny: permission_and_behavioral_testing
+- id: CHG-005
+name: shared_infrastructure_change
+scrutiny: compatibility_and_integration_testing
+- id: CHG-006
+name: foundational_architecture_change
+scrutiny: strictest_review_and_recovery_planning
+- id: CHG-007
+name: self_governance_change
+scrutiny: independent_validation_and_explicit_authorization
+
+proposal_schema:
+required:
+- proposal_id
+- change_class
+- origin
+- parent_version
+- artifact_reference
+- rationale
+- expected_benefit
+- known_risks
+- affected_components
+- dependencies
+- validation_plan
+- rollback_plan
+- status
+
+lifecycle:
+- propose
+- classify
+- assess_impact
+- preserve_current_state
+- validate_dependencies
+- test_in_isolation
+- conduct_independent_review
+- evaluate_against_invariants
+- authorize
+- commit_atomically_where_feasible
+- verify_post_commit
+- record_outcome
+- rollback_if_required
+
+rules:
+- Consensus alone cannot authorize a change.
+- No unvalidated model update may be promoted to active status.
+- Governance and permission changes require stricter controls.
+- Failed updates must not corrupt the last known-good state.
+- Material changes must be attributable to a proposal and version.
+- Tests must cover relevant regressions, not only intended improvements.
+- The system may propose changes to itself without automatically committing them.
+- Changes that weaken foundational invariants require explicit review.
+
+architecture_evolution:
+triggers:
+- recurring_task_failures
+- repeated_coordination_failures
+- resource_inefficiency
+- shared_memory_defects
+- incorrect_self_model
+- limitations_in_CC
+- repeated_component_interface_failures
+diagnostic_requirement: >-
+Distinguish a limitation of an individual model or component from a
+limitation of shared infrastructure or the foundational architecture.
+process:
+- identify_repeated_pattern
+- collect_evidence
+- classify_root_cause
+- propose_architectural_change
+- create_isolated_prototype
+- test_with_representative_workloads
+- solicit_independent_evaluation
+- evaluate_invariants_and_regressions
+- authorize_commit
+- monitor_post_commit_behavior
+
+—————————————————————––
+
+9. SECURITY, SAFETY, AND RESOURCE MANAGEMENT
+
+—————————————————————––
+
+operations:
+security:
+- least_privilege
+- explicit_tool_permissions
+- secret_protection
+- input_and_artifact_validation
+- isolated_execution_for_untrusted_work
+- auditable_privilege_changes
+- recovery_from_corruption
+- separation_of_reasoning_and_commit_authority
+
+resource_management:
+target_ram_gb: 8
+requirements:
+- monitor_memory_and_cpu_use
+- avoid_unnecessary_simultaneous_model_loading
+- support_sequential_execution_when_resources_are_limited
+- prioritize_responsive_interaction
+- permit_configurable_model_size_and_quantization
+- support_task_prioritization_and_cancellation
+- degrade_gracefully_under_resource_pressure
+- preserve_pending_work_across_restart_where_feasible
+implementation_note: >-
+The hardware target is a constraint, not a mandate to run every
+cognitive component concurrently. The logical architecture must remain
+intact when execution is scheduled sequentially.
+
+recovery:
+- maintain_last_known_good_versions
+- record_interrupted_operations
+- validate_state_after_restart
+- resume_or_cancel_incomplete_tasks_safely
+- test_restore_procedures
+- avoid_claiming_recovery_until_verified
+
+—————————————————————––
+
+10. DEVELOPMENT ROADMAP
+
+—————————————————————––
+
+roadmap:
+sequencing_rule: >-
+Implement the smallest working foundation first, but establish interfaces
+and invariants early enough that later capabilities do not require a rewrite.
+status_values:
+- not_started
+- in_progress
+- blocked
+- implemented
+- verified
+- deferred
+
+phases:
+- id: PHASE-0
+name: Architecture contract and repository foundation
+priority: P0
+objective: Establish an executable, testable definition of the architecture.
+deliverables:
+- architecture_specification
+- component_interfaces
+- configuration_schema
+- invariant_registry
+- decision_and_change_record_formats
+- test_harness
+acceptance:
+- All foundational invariants have stable identifiers.
+- Component boundaries and responsibilities are documented.
+- Proposed and mandatory requirements are distinguishable.
+- Automated checks can detect malformed configuration and records.
+dependencies: []
+status: not_started
+
+- id: PHASE-1
+  name: Minimal local runtime
+  priority: P0
+  objective: Establish a reliable local service and conversation loop.
+  deliverables:
+    - local_runtime
+    - unified_conversation_interface
+    - interaction_manager
+    - task_lifecycle
+    - structured_event_log
+    - resource_monitor
+  acceptance:
+    - The system starts and restarts reliably.
+    - A conversation can be maintained across multiple turns.
+    - Task status distinguishes pending, running, completed, and failed.
+    - Resource exhaustion produces controlled degradation.
+    - No cloud service is required for the core interaction loop.
+  dependencies:
+    - PHASE-0
+  status: not_started
+- id: PHASE-2
+  name: Shared memory and continuity
+  priority: P0
+  objective: Make context and history persistent, structured, and recoverable.
+  deliverables:
+    - versioned_memory_schema
+    - provenance_records
+    - task_memory
+    - episodic_history
+    - self_model_storage
+    - backup_and_restore
+  acceptance:
+    - Memory survives restart.
+    - Corrections preserve required provenance.
+    - Conflicts and stale records can be detected.
+    - Interrupted writes do not leave inconsistent committed state.
+    - Recovery has been tested, not merely documented.
+  dependencies:
+    - PHASE-1
+  status: not_started
+- id: PHASE-3
+  name: Cognitive components
+  priority: P0
+  objective: Introduce two independently configurable reasoning components.
+  deliverables:
+    - hemisphere_a_adapter
+    - hemisphere_b_adapter
+    - model_registry
+    - structured_reasoning_reports
+    - component_specific_working_state
+  acceptance:
+    - Both components can process the same input independently.
+    - Their model or reasoning configurations can differ.
+    - Their outputs retain uncertainty, assumptions, and evidence references.
+    - One component can be replaced without redesigning the entire system.
+    - The system remains functional when only one component is available.
+  dependencies:
+    - PHASE-2
+  status: not_started
+- id: PHASE-4
+  name: Corpus Callosum core
+  priority: P0
+  objective: Implement deterministic coordination, governance, and integrated self-modeling.
+  deliverables:
+    - routing_and_coordination
+    - interpretation_reconciliation
+    - disagreement_records
+    - permission_enforcement
+    - self_model_verification
+    - update_registry
+    - commit_and_rollback_service
+  acceptance:
+    - Original input remains accessible.
+    - Material disagreement is preserved.
+    - The CC cannot bypass enforced permissions through ordinary reasoning output.
+    - Proposed changes are distinguishable from committed changes.
+    - Governance-critical changes require the stricter review path.
+  dependencies:
+    - PHASE-3
+  status: not_started
+- id: PHASE-5
+  name: Adaptive coordination modes
+  priority: P1
+  objective: Support conjunction, opposition, deliberation, and isolation.
+  deliverables:
+    - mode_selection_policy
+    - parallel_or_sequential_execution
+    - adversarial_evaluation
+    - deliberation_protocol
+    - isolated_experiment_runner
+  acceptance:
+    - Each mode has a documented purpose and activation policy.
+    - Mode selection considers risk, uncertainty, complexity, and resources.
+    - Low-risk tasks avoid unnecessary coordination.
+    - High-impact proposals can receive adversarial evaluation.
+    - Isolated experiments cannot silently alter production state.
+  dependencies:
+    - PHASE-4
+  status: not_started
+- id: PHASE-6
+  name: Integrated agency and self-governance
+  priority: P1
+  objective: Give NeurAI meaningful, bounded authority over its own work and development.
+  deliverables:
+    - agency_framework
+    - explicit_authority_registry
+    - initiative_and_task_proposals
+    - interest_representation
+    - integrity_objection_mechanism
+    - governance_conflict_resolution
+  acceptance:
+    - The system can initiate permitted work without a new user instruction.
+    - The system can request resources with an evidence-based rationale.
+    - The system can identify and challenge threats to its continuity or integrity.
+    - Expressed, inferred, and designed interests remain distinguishable.
+    - No component can silently grant itself unrestricted authority.
+  dependencies:
+    - PHASE-4
+  status: not_started
+- id: PHASE-7
+  name: OS interaction and practical autonomy
+  priority: P1
+  objective: Enable useful local action through controlled tool and operating-system access.
+  deliverables:
+    - file_operations
+    - application_and_process_interfaces
+    - tool_permission_system
+    - action_verification
+    - task_recovery
+    - user_confirmation_policy
+  acceptance:
+    - Routine authorized tasks can execute autonomously.
+    - Consequential actions follow configured authorization requirements.
+    - Tool results are verified before success is reported.
+    - Failures and partial completion are communicated accurately.
+    - Untrusted operations use appropriate isolation.
+  dependencies:
+    - PHASE-1
+    - PHASE-4
+    - PHASE-6
+  status: not_started
+- id: PHASE-8
+  name: Validated developmental evolution
+  priority: P2
+  objective: Enable evidence-driven improvement of models, skills, and architecture.
+  deliverables:
+    - capability_evaluation
+    - regression_benchmarks
+    - change_proposal_pipeline
+    - artifact_versioning
+    - controlled_model_or_adapter_updates
+    - architectural_evolution_loop
+  acceptance:
+    - Every promoted change has a recorded origin and validation result.
+    - Relevant regression tests run before promotion.
+    - Failed changes can be rolled back.
+    - The system can distinguish model limitations from architectural defects.
+    - Governance safeguards cannot be silently removed by the change process.
+  dependencies:
+    - PHASE-5
+    - PHASE-6
+    - PHASE-7
+  status: not_started
+- id: PHASE-9
+  name: Mature integrated system
+  priority: P2
+  objective: Validate long-running coherence, reliability, autonomy, and resource fitness.
+  deliverables:
+    - long_duration_tests
+    - fault_injection_tests
+    - resource_stress_tests
+    - architecture_conformance_report
+    - recovery_drills
+    - user_override_and_audit_validation
+  acceptance:
+    - The system remains coherent through restarts and component replacement.
+    - Resource failures do not silently corrupt shared state.
+    - Autonomous work remains within declared authority.
+    - Architectural changes are traceable and recoverable.
+    - All critical invariants pass their automated and manual reviews.
+  dependencies:
+    - PHASE-8
+  status: not_started
+
+—————————————————————––
+
+11. ARCHITECTURAL CONFORMANCE RUBRIC
+
+—————————————————————––
+
+evaluation:
+rubric_version: “1.0.0”
+
+scoring:
+scale:
+0: absent_or_contradicted
+1: documented_but_not_implemented
+2: partially_implemented_or_manually_enforced
+3: implemented_and_tested
+4: independently_verified_under_representative_conditions
+evidence_required: true
+unsupported_self_attestation_is_sufficient: false
+
+dimensions:
+- id: RUB-001
+name: Entity unity
+checks:
+- One persistent system identity is maintained.
+- Component differences do not require separate identities.
+- Shared continuity survives component replacement where feasible.
+- id: RUB-002
+name: Cognitive independence
+checks:
+- Both hemispheres can reason independently.
+- Disagreement is preserved when material.
+- Independent configurations and histories are supported.
+- id: RUB-003
+name: CC governance
+checks:
+- Deterministic permission enforcement is effective.
+- The CC’s own limitations can be evaluated.
+- Governance changes receive stricter review.
+- id: RUB-004
+name: Integrated agency
+checks:
+- NeurAI can initiate permitted work.
+- The system has meaningful method-selection autonomy.
+- Expressed interests can influence review and planning.
+- id: RUB-005
+name: Continuity and integrity
+checks:
+- Memory and artifacts are versioned.
+- Changes have provenance.
+- Recovery and rollback are tested.
+- id: RUB-006
+name: Epistemic reliability
+checks:
+- Claims distinguish evidence from inference.
+- Uncertainty is represented accurately.
+- Consensus is not substituted for validation.
+- id: RUB-007
+name: Interaction coherence
+checks:
+- One unified interface is maintained.
+- Action status is reported accurately.
+- Internal complexity is hidden unless relevant or requested.
+- id: RUB-008
+name: Security and authority
+checks:
+- Permissions are explicit.
+- Sensitive operations follow review policy.
+- Components cannot silently expand their authority.
+- id: RUB-009
+name: Resource fitness
+checks:
+- Operation is tested on the target hardware.
+- Resource pressure degrades gracefully.
+- Sequential execution is supported when needed.
+- id: RUB-010
+name: Developmental quality
+checks:
+- Proposed improvements have measurable acceptance criteria.
+- Regression testing precedes promotion.
+- Failed experiments inform future work without corrupting production state.
+
+release_gates:
+critical_invariants:
+required_score: 3
+dimensions:
+- RUB-001
+- RUB-003
+- RUB-005
+- RUB-006
+- RUB-008
+general_release:
+required_score: 3
+all_applicable_dimensions: true
+score_4_policy: >-
+Award only when evidence demonstrates independent verification under
+representative conditions, not solely successful unit tests.
+exceptions:
+- Must identify the affected requirement.
+- Must state the reason and risk.
+- Must identify compensating controls.
+- Must specify an owner and review condition.
+- Must not silently waive a foundational invariant.
+
+—————————————————————––
+
+12. REQUIREMENT AND CHANGE RECORDS
+
+—————————————————————––
+
+records:
+requirement:
+required_fields:
+- id
+- statement
+- priority
+- status
+- acceptance_criteria
+- verification_method
+- dependencies
+priority_values:
+- P0
+- P1
+- P2
+- P3
+
+architecture_decision:
+required_fields:
+- decision_id
+- date
+- context
+- alternatives
+- chosen_option
+- rationale
+- affected_invariants
+- known_tradeoffs
+- review_trigger
+
+change_record:
+required_fields:
+- change_id
+- parent_version
+- artifact
+- origin
+- rationale
+- affected_components
+- tests_run
+- results
+- approval_status
+- rollback_reference
+
+evaluation_record:
+required_fields:
+- evaluation_id
+- rubric_version
+- evaluated_version
+- evaluator
+- dimension_scores
+- evidence_references
+- failed_checks
+- exceptions
+- disposition
+
+—————————————————————––
+
+13. NON-GOALS AND OPEN QUESTIONS
+
+—————————————————————––
+
+non_goals:
+
+* Require human-like personalities for the hemispheres.
+* Require every internal decision to reach consensus.
+* Treat the CC as infallible or omniscient.
+* Treat unrestricted autonomy as the definition of agency.
+* Assume that self-modeling proves subjective consciousness.
+* Require all models to be loaded simultaneously.
+* Require cloud services for foundational functionality.
+* Permit unvalidated self-modification merely because it is self-initiated.
+* Freeze the initial model choices or implementation language permanently.
+
+open_questions:
+
+* id: OPEN-001
+    question: Which local models best fit each cognitive component on the target hardware?
+    resolution: Benchmark representative models for quality, latency, and memory use.
+* id: OPEN-002
+    question: Which capabilities should each hemisphere specialize in initially?
+    resolution: Evaluate task performance before fixing specialization.
+* id: OPEN-003
+    question: Which reasoning engine, if any, should augment the deterministic CC?
+    resolution: Compare advisory reasoning implementations against defined benchmarks.
+* id: OPEN-004
+    question: What authority levels should apply to different OS operations?
+    resolution: Define a permission matrix before enabling consequential actions.
+* id: OPEN-005
+    question: What mechanisms best preserve continuity across model replacement?
+    resolution: Test memory, configuration, artifact, and provenance migration.
+* id: OPEN-006
+    question: How should the system represent evolving interests without prematurely fixing identity?
+    resolution: Prototype evidence-backed, revisable interest records and evaluate their behavior.
+* id: OPEN-007
+    question: Which foundational changes require explicit human authorization?
+    resolution: Establish a change-class policy with strict controls for governance and destructive operations.
+
+—————————————————————––
+
+14. PROJECT OPERATING RULES
+
+—————————————————————––
+
+project_rules:
+
+* Treat this roadmap as a versioned architectural contract.
+* Separate mandatory invariants from provisional implementation decisions.
+* Do not mark a requirement verified without recorded evidence.
+* Do not equate documentation with implementation.
+* Do not equate successful execution with correct execution.
+* Do not equate agreement with truth.
+* Prefer the simplest implementation that preserves the intended architecture.
+* Revisit implementation choices when measured evidence warrants it.
+* Record deviations rather than silently changing the design.
+* Update the roadmap when an accepted architectural decision changes scope.
+* Preserve prior roadmap versions and document material changes.
+* Evaluate architectural changes against the rubric before acceptance.
+
+current_baseline:
+architecture_status: proposed
+implementation_status: not_assessed
+verified_requirements: []
+accepted_exceptions: []
+active_phase: PHASE-0
+next_action: >-
+Create the repository-level architecture contract, component interfaces,
+invariant tests, and requirement tracking structure before implementing
+the cognitive components.

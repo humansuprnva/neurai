@@ -1,0 +1,87 @@
+# NeurAI OS — Configuration Schema (Phase-0 definition)
+#
+# Schema for the runtime configuration file (working name
+# `neurai.config.yaml`) that Phase 1+ will load at startup. Written in a
+# JSON-Schema-like YAML dialect; the Phase-0 test harness
+# (../tests/validate_records.py) enforces the marked rules against
+# fixture configurations, satisfying the Phase-0 acceptance criterion
+# "Automated checks can detect malformed configuration and records."
+#
+# Design intent (roadmap Sections 5, 9):
+# - Local-first: no field may require a cloud account or network access
+#   for the core loop.
+# - Resource-aware: the target is 8 GB RAM; sequential model execution is
+#   a first-class setting, not a failure mode.
+# - Nothing here grants authority: tier data lives in
+#   registry/authority-tiers.yaml, and this schema only references it.
+
+schema:
+  id: neurai-config
+  version: "0.1.0"
+  applies_to: neurai.config.yaml
+  format: yaml
+
+required_top_level:
+  - schema_version
+  - runtime
+  - models
+  - memory
+  - authority
+  - logging
+
+fields:
+  schema_version:
+    type: string
+    required: true
+    rule: must equal the config schema's major.minor at load; mismatch is a hard error, never a silent upgrade
+  runtime:
+    type: object
+    required: true
+    fields:
+      target_ram_gb: {type: number, required: true, note: "Deployment target from the roadmap (8 GB, Lenovo V14 ADA)."}
+      execution_scheduling: {type: string, required: true, enum: [sequential, parallel_when_resources_allow], note: "Hemispheres may run sequentially without invalidating the architecture (roadmap Section 9)."}
+      degrade_under_pressure: {type: boolean, required: true, note: "Graceful degradation is mandatory behavior, not optional."}
+      interaction_interface: {type: string, required: false, enum: [repl, web, both], default: both}
+  models:
+    type: object
+    required: true
+    note: Model choices are NOT frozen by the roadmap (Section 13 non-goals); any local model may be registered per component.
+    fields:
+      hemisphere_a: {type: object, required: true, fields: {model_ref: {type: string, required: true}, quantization: {type: string, required: false}}}
+      hemisphere_b: {type: object, required: true, fields: {model_ref: {type: string, required: true}, quantization: {type: string, required: false}}}
+      cc_reasoning_engine: {type: object, required: false, fields: {model_ref: {type: string, required: true}}, note: "Optional and advisory only; the CC core is deterministic."}
+      allow_network_models: {type: boolean, required: true, note: "Must be false for the foundational local-only configuration; the core loop may not depend on cloud services."}
+  memory:
+    type: object
+    required: true
+    fields:
+      store: {type: string, required: true, enum: [sqlite], note: "Roadmap Section 5 initial implementation."}
+      path: {type: string, required: true}
+      schema_version: {type: string, required: true, note: "Memory schema versioning is required (MEM initial implementation); distinct from the config schema_version."}
+      transactions: {type: boolean, required: true, note: "Must be true: transactions are required for consistency-critical updates."}
+      backups: {type: object, required: true, fields: {enabled: {type: boolean, required: true}, retention: {type: string, required: false}}}
+  authority:
+    type: object
+    required: true
+    fields:
+      model: {type: string, required: true, enum: [tiered_by_reversibility], note: "ADR-001."}
+      registry_ref: {type: string, required: true, note: "Path or runtime identifier of the authority registry data (Phase 0: architecture/registry/authority-tiers.yaml)."}
+      decision_log_ref: {type: string, required: true, note: "Append-only decision log location (SVC-005)."}
+  logging:
+    type: object
+    required: true
+    fields:
+      event_log_ref: {type: string, required: true}
+      level: {type: string, required: false, enum: [error, warn, info, debug], default: info}
+  interaction:
+    type: object
+    required: false
+    fields:
+      advanced_system_view: {type: boolean, required: false, default: false, note: "Optional diagnostics surface; must not expose secrets or credentials (roadmap Section 7)."}
+
+validation_rules:
+  - A configuration missing any required top-level section is malformed.
+  - A configuration with an enum value outside the declared set is malformed.
+  - memory.transactions must be true and runtime.degrade_under_pressure must be true; false values are rejected as contract violations, not honored as settings.
+  - models.allow_network_models must be false in the foundational configuration.
+  - Unknown top-level sections produce a warning, not an error (forward compatibility), and must be recorded in the event log at load.

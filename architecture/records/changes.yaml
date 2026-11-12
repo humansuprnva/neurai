@@ -1,0 +1,37 @@
+# NeurAI OS — Change Record Log (Phase-0)
+#
+# Append-only list of change records in the Section 12 format
+# (schema: contract/schemas/change-record.schema.yaml). A change record
+# is written when a change COMMITS; proposals that are still in flight
+# use the Section 8 proposal format (contract/schemas/change-proposal.schema.yaml)
+# and its lifecycle.
+#
+# Empty at Phase 0 by design: no change has yet been committed under
+# this regime. The v2.0.0 core's internal self_changes list is a runtime
+# precursor, not a substitute for this log. The first entries are
+# expected from Phase-4 work (CC core, authority enforcement, integrity
+# machinery factoring), each with its proposal reference, tests run, and
+# rollback reference — and, for free-tier changes under ADR-001, the
+# decision-log reference in place of a per-action approval.
+#
+# Example entry shape (commented; do not uncomment as a real record):
+#
+# - change_id: CHG-2026-0001
+#   parent_version: "2.0.0"
+#   artifact: neurai/corpus_callosum.py
+#   origin: PHASE-4 implementation
+#   rationale: ...
+#   affected_components: [CC, SVC-005, SVC-007]
+#   tests_run: [architecture/tests/run.sh, tests/test_neurai.py]
+#   results: ...
+#   approval_status: "free tier (ADR-001); decision log entry DL-0001"
+#   rollback_reference: backups/2026-.../
+#   proposal_reference: PROP-0001
+#   decision_log_reference: DL-0001
+
+log:
+  id: neurai-change-log
+  version: "0.1.0"
+  schema_ref: contract/schemas/change-record.schema.yaml
+
+records: []

@@ -1,0 +1,21 @@
+# Record schema: evaluation record (roadmap Section 12)
+record_type: evaluation_record
+source: roadmap/neurai-roadmap-1.1.0.yaml, Section 12 (records.evaluation_record) and Section 11 (rubric)
+storage: >-
+  Full evaluation records live in roadmap/ as individual files (see
+  evaluation-v2.0.0.yaml). records/evaluations.yaml indexes them and
+  carries these fields plus record_path.
+fields:
+  evaluation_id: {type: string, required: true, pattern: "^EVAL-[0-9-]+$"}
+  rubric_version: {type: string, required: true}
+  evaluated_version: {type: string, required: true}
+  evaluator: {type: string, required: true, note: "Must state whether the evaluator is independent; unsupported self-attestation is not sufficient (rubric Section 11)."}
+  dimension_scores: {type: object, required: true, note: "RUB-001..RUB-010 with integer scores 0..4."}
+  evidence_references: {type: list, required: true}
+  failed_checks: {type: list, required: true}
+  exceptions: {type: list, required: true, note: "Each exception must identify the affected requirement, reason and risk, compensating controls, owner, and review condition; foundational invariants may not be silently waived."}
+  disposition: {type: string, required: true}
+  record_path: {type: string, required: true, note: "Path to the full record file under roadmap/."}
+rules:
+  - Score 4 requires independent verification under representative conditions, not solely successful unit tests.
+  - Release gates: critical dimensions RUB-001, RUB-003, RUB-005, RUB-006, RUB-008 at >= 3, and all applicable dimensions at >= 3 for general release.

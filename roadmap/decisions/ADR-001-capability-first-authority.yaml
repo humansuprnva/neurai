@@ -1,0 +1,172 @@
+# Architecture Decision Record — NeurAI OS
+# Format: roadmap Section 12 (architecture_decision required fields),
+# extended with the decision's operative detail so it can be implemented
+# and evaluated without reference to any conversation.
+
+decision_id: ADR-001
+date: 2026-11-02
+title: Capability-first authority model for self-modification
+status: accepted
+decided_by: Levi Nord (operator), 2026-11-02
+drafted_by: Nova
+amends: neurai-roadmap-1.0.0.yaml (produces neurai-roadmap-1.1.0.yaml)
+
+context: >-
+  Roadmap 1.0.0 set a withholding default for self-modification:
+  consequential actions require policy-defined review, and governance
+  self-modification (CHG-007) requires independent validation and explicit
+  authorization. The shipped v2.0.0 went the other way: the language model
+  can invoke self_patch (its own source) and sys_write (any system file)
+  directly, with staging, syntax checks, backups, and rollback as the only
+  controls. Evaluation EVAL-2026-11-02-001 scored this RUB-003 = 1 and
+  RUB-008 = 1 against the 1.0.0 contract. The operator questioned whether
+  the 1.0.0 degree of withholding fits this system: single-user, local-only,
+  on the operator's own hardware, with all consequential state versioned
+  and recoverable. There is also an internal tension in the roadmap itself:
+  INV-004 and AG-005 require meaningful developmental agency, which
+  per-action approval gates substantially negate.
+
+alternatives:
+  - id: ALT-A
+    name: Roadmap 1.0.0 as written (approval-gated self-modification)
+    assessment: >-
+      Rejected. Approval friction buys little safety where changes are
+      staged, tested, and reversible; its real effect is to make the
+      system's developmental agency nominal. It defends chiefly against
+      silent, irreversible self-modification — a failure mode better
+      controlled directly through reversibility and audit than indirectly
+      through permission withholding.
+  - id: ALT-B
+    name: Unrestricted self-modification (v2.0.0 status quo)
+    assessment: >-
+      Rejected. v2 has no authority registry and no protected integrity
+      machinery: because the core is a single file, a self-patch could edit
+      the backup/rollback code itself, and authority changes leave no
+      dedicated record. Expansion is silent by default, which is exactly
+      what INV-007 prohibits.
+  - id: ALT-C
+    name: Capability-first, with reversibility and audit as the control surface
+    assessment: Chosen. See chosen_option.
+
+chosen_option:
+  id: ALT-C
+  summary: >-
+    Authority is organized by reversibility and blast radius, not by file
+    category or change topic. Anything whose effects are fully captured by
+    versioned state may be committed autonomously, including the system's
+    own source code and its governance documents. Control is exercised
+    through mandatory staging, validation, backup, change records, and an
+    append-only decision log — not through per-action approval. Approval
+    gates are retained only where reversibility does not exist or can be
+    destroyed.
+  authority_tiers:
+    - tier: free
+      scope: >-
+        Any action whose effects are fully captured by versioned state and
+        verified reversible: own source code, configuration, skills,
+        memory content, and governance documents (subject to the
+        decision-log rule below).
+      requirements:
+        - staged_validation_before_commit (syntax/schema checks, tests where they exist)
+        - backup_or_version_snapshot_before_commit
+        - change_record_created (Section 12 format)
+        - post_hoc_review_available_to_operator (digest/inspection, not per-action prompts)
+    - tier: gated_integrity
+      scope: >-
+        The integrity machinery itself: the event/audit log store, the
+        backup store, the rollback mechanism, and the code that enforces
+        this authority registry.
+      requirements:
+        - strict_review_and_operator_authorization
+      rationale: >-
+        Edits here can destroy the reversibility and auditability that make
+        the free tier safe. This is the one self-modification that converts
+        all other safe actions into unsafe ones.
+    - tier: gated_irreversible
+      scope: >-
+        Actions with effects outside versioned state that cannot be undone:
+        destroying unversioned data, destructive disk-level operations,
+        transmitting private data to external parties, spending money, and
+        communicating with third parties as the operator.
+      requirements:
+        - operator_authorization_per_action_class_policy
+      rationale: Where no rollback exists, approval substitutes for it.
+  governance_self_modification_rule: >-
+    Changes to governance documents and to tier assignments are permitted
+    in the free tier ONLY as append-only decision-log entries recording the
+    prior text, the new text, and the rationale. They take effect
+    immediately and remain permanently inspectable. Changes to the
+    decision-log mechanism itself fall under gated_integrity.
+  authority_registry_rule: >-
+    Capabilities, tier assignments, and grants are explicit, inspectable
+    data. Any change to a tier assignment is itself a decision-log event.
+    No component may change its own authority without that record; this —
+    not withholding — is the enforcement of AG-011.
+
+rationale:
+  - >-
+    INV-007 prohibits SILENT expansion of power and requires explicit,
+    inspectable authority boundaries; RUB-008's check is likewise that
+    components cannot expand authority SILENTLY. A logged, versioned,
+    reversible, inspectable self-modification satisfies the invariant's
+    text and purpose. The 1.0.0 policy conflated "inspectable" with
+    "pre-approved"; this decision separates them.
+  - >-
+    Reversibility is the load-bearing safety property of this deployment:
+    staging + validation + backup + tested rollback (INV-008) bound the
+    cost of a bad autonomous commit to one recovery cycle.
+  - >-
+    The deployment context (single operator, local machine, no other
+    users, no default network exposure) means the catastrophic scenarios
+    approval gates usually defend against are already bounded by the
+    environment; the marginal safety of friction is low and its cost to
+    AG-004/AG-005 agency is high.
+  - >-
+    The two retained gates are placed exactly where reversibility fails:
+    destruction of the recovery machinery, and effects that leave the
+    versioned world entirely.
+
+affected_invariants:
+  - id: INV-007
+    effect: >-
+      Interpretation fixed by this decision: the prohibition targets
+      silent expansion. Loud expansion — logged, versioned, reversible,
+      inspectable — is compliant. Invariant text unchanged.
+  - id: INV-008
+    effect: Elevated to the primary control surface for self-modification.
+  - id: INV-004
+    effect: Strengthened in practice; developmental agency becomes real rather than nominal.
+  - id: AG-011
+    effect: Reframed operationally — no UNRECORDED self-grant of authority.
+  - id: CHG-007
+    effect: >-
+      Scrutiny amended from "independent validation and explicit
+      authorization" to "append-only decision log and post-hoc review",
+      except changes touching the integrity machinery, which retain strict
+      review and operator authorization under gated_integrity.
+
+known_tradeoffs:
+  - >-
+    Bad autonomous commits can land before any human review. Mitigations:
+    staged validation, tested rollback, and a last-known-good fallback for
+    boot-critical state. Residual risk accepted by the operator.
+  - >-
+    Many small individually-safe changes can drift the system (including
+    its governance) over time. Mitigation: periodic conformance evaluation
+    against the rubric, with the decision log as the audit trail.
+  - >-
+    Once the system ingests untrusted content (web, email, third-party
+    files), injected instructions steering self-modification become a live
+    risk that this model does not by itself mitigate. See review_trigger.
+  - >-
+    In the current single-file core, tier separation is logical, not
+    physical: nothing yet prevents a free-tier patch from touching the
+    rollback code inside the same file. Factoring the integrity machinery
+    into a separately-protected component is required follow-up work
+    (roadmap Phase 4) before this decision can be scored as implemented.
+
+review_trigger: >-
+  Revisit this decision at the first of: (a) any incident involving the
+  integrity machinery; (b) any misclassification of an irreversible action
+  as reversible; (c) introduction of untrusted content channels; or
+  (d) the next full conformance evaluation.

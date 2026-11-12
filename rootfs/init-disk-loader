@@ -1,0 +1,92 @@
+#!/bin/sh
+# NeurAI disk-boot loader (initramfs /init for the INSTALLED system).
+# Pure shell: load storage modules, find NeurAI partitions by marker
+# files (no blkid in BusyBox), mount root/data/integrity/esp, activate
+# swap, then switch_root into the real system on disk.
+/bin/busybox --install -s /bin 2>/dev/null
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+mount -t proc proc /proc 2>/dev/null
+mount -t sysfs sysfs /sys 2>/dev/null
+mount -t devtmpfs devtmpfs /dev 2>/dev/null
+echo "[neurai-loader] locating NeurAI partitions..."
+
+# Kernel modules, in dependency order (list generated at build time)
+if [ -f /lib/modules/order.txt ]; then
+  while read -r ko; do
+    [ -n "$ko" ] && insmod "/lib/modules/$ko" 2>/dev/null
+  done < /lib/modules/order.txt
+fi
+
+# Rescue mode: drop to a shell instead of booting the system
+if grep -q "neurai.rescue" /proc/cmdline 2>/dev/null; then
+  echo "[neurai-loader] rescue mode - shell on console"
+  exec sh
+fi
+
+# Wait for block devices to settle
+i=0
+while [ $i -lt 10 ]; do
+  mdev -s 2>/dev/null
+  ls /dev/sd* /dev/nvme* /dev/mmcblk* >/dev/null 2>&1 && break
+  sleep 1; i=$((i+1))
+done
+mdev -s 2>/dev/null
+
+mkdir -p /probe /newroot
+ROOTDEV=""; DATADEV=""; INTDEV=""; ESPDEV=""
+# Partition registration can lag behind whole-disk registration - retry
+# the probe until the root partition is found (or we run out of patience).
+attempt=0
+while [ $attempt -lt 20 ] && [ -z "$ROOTDEV" ]; do
+  mdev -s 2>/dev/null
+  for part in /sys/class/block/*; do
+    [ -f "$part/partition" ] || continue
+    name=$(basename "$part")
+    dev="/dev/$name"
+    [ -b "$dev" ] || continue
+    if mount -t ext4 -o ro "$dev" /probe 2>/dev/null; then
+      if [ -f /probe/etc/neurai-release ]; then ROOTDEV="$dev"
+      elif [ -f /probe/.neurai-data ]; then DATADEV="$dev"
+      elif [ -f /probe/.neurai-integrity ]; then INTDEV="$dev"
+      fi
+      umount /probe 2>/dev/null
+    elif mount -t vfat -o ro "$dev" /probe 2>/dev/null; then
+      { [ -d /probe/EFI ] || [ -d /probe/efi ]; } && ESPDEV="$dev"
+      umount /probe 2>/dev/null
+    fi
+  done
+  [ -z "$ROOTDEV" ] && sleep 1
+  attempt=$((attempt+1))
+done
+echo "[neurai-loader] root=$ROOTDEV data=$DATADEV integrity=$INTDEV esp=$ESPDEV"
+
+if [ -z "$ROOTDEV" ]; then
+  echo "[neurai-loader] FATAL: NEURAI_ROOT partition not found - rescue shell"
+  exec sh
+fi
+
+mount -t ext4 -o rw "$ROOTDEV" /newroot || { echo "[neurai-loader] root mount failed"; exec sh; }
+[ -n "$DATADEV" ] && mount -t ext4 -o rw "$DATADEV" /newroot/neurai/data 2>/dev/null
+[ -n "$INTDEV" ] && mount -t ext4 -o rw "$INTDEV" /newroot/neurai/integrity 2>/dev/null
+[ -n "$ESPDEV" ] && mount -t vfat -o rw "$ESPDEV" /newroot/boot/efi 2>/dev/null
+
+# Swap: the remaining unmountable partition on the root disk (>= 512 MiB)
+ROOTDISK=$(basename "$(dirname "$(readlink -f "/sys/class/block/$(basename "$ROOTDEV")")")")
+for part in /sys/class/block/*; do
+  [ -f "$part/partition" ] || continue
+  name=$(basename "$part"); dev="/dev/$name"
+  [ "$dev" = "$ROOTDEV" ] || [ "$dev" = "$DATADEV" ] || [ "$dev" = "$INTDEV" ] || [ "$dev" = "$ESPDEV" ] && continue
+  pdisk=$(basename "$(dirname "$(readlink -f "$part")")")
+  [ "$pdisk" = "$ROOTDISK" ] || continue
+  sectors=$(cat "$part/size" 2>/dev/null || echo 0)
+  [ "$sectors" -gt 1048576 ] || continue
+  mkswap "$dev" >/dev/null 2>&1 && swapon "$dev" 2>/dev/null && echo "[neurai-loader] swap on $dev"
+done
+
+mount -o move /proc /newroot/proc 2>/dev/null
+mount -o move /sys /newroot/sys 2>/dev/null
+mount -o move /dev /newroot/dev 2>/dev/null
+echo "[neurai-loader] switching to installed system on $ROOTDEV"
+exec switch_root /newroot /sbin/init
+echo "[neurai-loader] switch_root failed - rescue shell"
+exec sh

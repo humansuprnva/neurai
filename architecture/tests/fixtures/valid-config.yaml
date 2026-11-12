@@ -1,0 +1,25 @@
+# Valid example configuration for the Phase-0 config schema.
+# Must PASS tests/validate_records.py.
+schema_version: "0.1.0"
+runtime:
+  target_ram_gb: 8
+  execution_scheduling: sequential
+  degrade_under_pressure: true
+  interaction_interface: both
+models:
+  hemisphere_a: {model_ref: local/qwen2.5-1.5b-instruct, quantization: Q4_K_M}
+  hemisphere_b: {model_ref: local/qwen2.5-1.5b-instruct, quantization: Q4_K_M}
+  allow_network_models: false
+memory:
+  store: sqlite
+  path: /neurai/data/memory.db
+  schema_version: "1"
+  transactions: true
+  backups: {enabled: true, retention: "keep last 10"}
+authority:
+  model: tiered_by_reversibility
+  registry_ref: architecture/registry/authority-tiers.yaml
+  decision_log_ref: /neurai/data/decision-log
+logging:
+  event_log_ref: /neurai/data/events
+  level: info

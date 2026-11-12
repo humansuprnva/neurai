@@ -1,0 +1,54 @@
+# NeurAI OS — Evaluation Index (Phase-0)
+#
+# Index of conformance evaluations in the Section 12 format. Full
+# records live as individual files in roadmap/ (next to the roadmap they
+# score against) and are never duplicated here.
+#
+# Scoring discipline (rubric Section 11): evidence is required;
+# unsupported self-attestation is not sufficient; score 4 requires
+# independent verification under representative conditions.
+
+index:
+  id: neurai-evaluation-index
+  version: "0.1.0"
+  storage_of_full_records: roadmap/
+
+evaluations:
+  - evaluation_id: EVAL-2026-11-02-001
+    date: "2026-11-02"
+    rubric_version: "1.0.0"
+    evaluated_version: neurai-os-2.0.0-amd64 (neurai.py VERSION 2.0.0)
+    evaluator: Nova (developer self-evaluation; not independent)
+    dimension_scores:
+      RUB-001: 2
+      RUB-002: 0
+      RUB-003: 1
+      RUB-004: 2
+      RUB-005: 2
+      RUB-006: 2
+      RUB-007: 3
+      RUB-008: 1
+      RUB-009: 2
+      RUB-010: 2
+    evidence_references:
+      - QEMU boot test of the v2.0.0 ISO (passed 2026-11-01)
+      - 14 unit tests plus a strict real-model (1.5B) test in tests/
+      - Installed-disk QEMU test (teach, poweroff, reboot, fact persists)
+    failed_checks:
+      - "RUB-002: no hemispheres exist; disagreement cannot be produced or preserved."
+      - "RUB-003: no Corpus Callosum; no deterministic permission enforcement; reasoning and commit authority not separated."
+      - "RUB-005: memory is a single JSON file — no schema versioning, transactions, or per-claim provenance; restore untested."
+      - "RUB-008: no authority registry, permission matrix, or least privilege; a component can silently expand its own authority."
+      - "RUB-010: no change-proposal pipeline in Section 8/12 formats."
+    exceptions: []
+    disposition: >-
+      v2.0.0 does NOT meet the rubric's release gates (critical dimensions
+      RUB-001/003/005/006/008 require >= 3). It is a functional prototype.
+      Next work per the evaluation's sequencing note: Phase-0 scaffolding,
+      then the CC/permission layer, then hemispheres.
+    addendum: >-
+      ADR-001 (2026-11-02) amended the contract to roadmap 1.1.0 after
+      this evaluation. The evaluation stands as a record against 1.0.0;
+      indicative re-score effects are noted in the full record and are
+      not applied here. Formal re-scoring belongs to the next evaluation.
+    record_path: roadmap/evaluation-v2.0.0.yaml

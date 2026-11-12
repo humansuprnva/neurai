@@ -1,0 +1,314 @@
+# NeurAI OS — Requirement Tracker (Phase-0 deliverable)
+#
+# Section 12 requirement records for the roadmap's named requirements:
+# entity requirements (Section 1), memory requirements (Section 5), and
+# agency/authority requirements (Section 3). The twelve invariants live
+# in contract/invariants/invariants.yaml, not here, to avoid a second
+# source of truth. Rubric dimensions (RUB-001..010) are tracked through
+# evaluation records, not here.
+#
+# Status vocabulary: roadmap status_values. A requirement is never
+# marked verified without recorded evidence (project operating rules).
+# Statuses below reflect EVAL-2026-11-02-001 evidence against v2.0.0.
+
+tracker:
+  id: neurai-requirements
+  version: "0.1.0"
+  source: roadmap/neurai-roadmap-1.1.0.yaml
+  baseline_evaluation: EVAL-2026-11-02-001
+
+requirements:
+  # ---- Entity requirements (roadmap Section 1) ----
+  - id: ENT-001
+    statement: Maintain one coherent system identity across all components.
+    priority: P0
+    status: in_progress
+    mandatory: true
+    source: roadmap Section 1 (priority critical)
+    acceptance_criteria:
+      - One persistent NeurAI identity is presented through one unified interface regardless of which components produced the work.
+      - Component replacement does not change the presented identity.
+    verification_method: conformance evaluation (RUB-001) plus Phase-3/4 component tests
+    dependencies: []
+    evidence:
+      - "EVAL-2026-11-02-001 RUB-001 = 2: one identity and interface exist, but unity is trivial with a single component; the tripartite property is untested."
+  - id: ENT-002
+    statement: Preserve functional independence between the two hemispheres.
+    priority: P0
+    status: not_started
+    mandatory: true
+    source: roadmap Section 1 (priority critical)
+    acceptance_criteria:
+      - Each hemisphere interprets the same original input without access to the other's in-progress reasoning.
+      - Each maintains its own model/reasoning configuration and development history.
+    verification_method: Phase-3 component tests; conformance evaluation (RUB-002)
+    dependencies: [PHASE-3]
+  - id: ENT-003
+    statement: Treat the Corpus Callosum as a constituent of NeurAI, not an external owner.
+    priority: P0
+    status: not_started
+    mandatory: true
+    source: roadmap Section 1 (priority critical)
+    acceptance_criteria:
+      - The CC exposes the component interfaces in contract/component-interfaces.yaml as part of the entity, with no separate user-facing identity.
+      - The CC's constraints (not infallible, cannot define the whole without review) are enforced by design, not convention.
+    verification_method: Phase-4 design review; conformance evaluation (RUB-001, RUB-003)
+    dependencies: [PHASE-4]
+  - id: ENT-004
+    statement: Preserve shared continuity while allowing component-specific internal states.
+    priority: P0
+    status: in_progress
+    mandatory: true
+    source: roadmap Section 1 (priority critical)
+    acceptance_criteria:
+      - Shared memory and task state survive restarts and component replacement.
+      - Component working state (MEM-006) remains component-local without fragmenting shared continuity.
+    verification_method: Phase-2/3 persistence and replacement tests
+    dependencies: [PHASE-2, PHASE-3]
+    evidence:
+      - "v2.0.0: persistent memory survives restart and brain replacement (EVAL-2026-11-02-001 RUB-001 evidence); component-specific states do not exist yet."
+  - id: ENT-005
+    statement: Do not require identical beliefs, conclusions, methods, or development histories.
+    priority: P1
+    status: not_started
+    mandatory: true
+    source: roadmap Section 1 (priority high)
+    acceptance_criteria:
+      - Coordination outputs preserve material disagreement instead of forcing convergence (see INV-002, INV-009).
+    verification_method: Phase-3/5 coordination tests; conformance evaluation (RUB-002)
+    dependencies: [PHASE-3]
+  - id: ENT-006
+    statement: Do not equate architectural unity with proven subjective consciousness.
+    priority: P0
+    status: in_progress
+    mandatory: true
+    source: roadmap Section 1 (priority critical)
+    acceptance_criteria:
+      - No system output, self-model claim, or record represents functional self-modeling as proof of subjective experience (see INV-010).
+    verification_method: evaluation review of outputs and self-model records
+    dependencies: []
+    evidence:
+      - "No v2.0.0 output makes such a claim (EVAL-2026-11-02-001 notes); the constraint is registered here and in INV-010 for every future evaluation."
+
+  # ---- Memory requirements (roadmap Section 5) ----
+  - id: MEM-R01
+    statement: Preserve provenance for material stored claims.
+    priority: P0
+    status: not_started
+    mandatory: true
+    source: roadmap Section 5
+    acceptance_criteria:
+      - Material memory records carry origin, confidence, version, and evidence (MEM-007).
+    verification_method: Phase-2 schema and write-path tests
+    dependencies: [PHASE-2]
+  - id: MEM-R02
+    statement: Distinguish observation, inference, hypothesis, and verified fact.
+    priority: P0
+    status: not_started
+    mandatory: true
+    source: roadmap Section 5
+    acceptance_criteria:
+      - Stored claims and system answers label their epistemic kind; the distinction survives storage and retrieval.
+    verification_method: Phase-2 record tests; conformance evaluation (RUB-006)
+    dependencies: [PHASE-2]
+  - id: MEM-R03
+    statement: Support corrections without silently erasing relevant history.
+    priority: P0
+    status: not_started
+    mandatory: true
+    source: roadmap Section 5
+    acceptance_criteria:
+      - A correction creates a new version linked to the corrected record; the prior version remains retrievable.
+    verification_method: Phase-2 correction tests, including a tested restore
+    dependencies: [PHASE-2]
+  - id: MEM-R04
+    statement: Detect conflicting versions and stale information.
+    priority: P1
+    status: not_started
+    mandatory: true
+    source: roadmap Section 5
+    acceptance_criteria:
+      - Conflict and staleness checks run on read or on a schedule and surface flagged records.
+    verification_method: Phase-2 detection tests with seeded conflicts
+    dependencies: [PHASE-2]
+  - id: MEM-R05
+    statement: Support recovery from partial writes and interrupted operations.
+    priority: P0
+    status: not_started
+    mandatory: true
+    source: roadmap Section 5
+    acceptance_criteria:
+      - Consistency-critical updates are transactional; an interrupted write leaves the last committed state intact, demonstrated by test.
+    verification_method: Phase-2 fault-injection tests (kill mid-write)
+    dependencies: [PHASE-2]
+  - id: MEM-R06
+    statement: Protect sensitive data through explicit access controls.
+    priority: P1
+    status: not_started
+    mandatory: true
+    source: roadmap Section 5
+    acceptance_criteria:
+      - Access to sensitive categories is governed by the authority registry, not by convention.
+    verification_method: Phase-4/7 permission tests
+    dependencies: [PHASE-4]
+  - id: MEM-R07
+    statement: Preserve continuity across restarts and model replacement where feasible.
+    priority: P0
+    status: in_progress
+    mandatory: true
+    source: roadmap Section 5
+    acceptance_criteria:
+      - Memory, task state, and identity records survive restart and a model swap without manual repair.
+    verification_method: restart and model-replacement tests
+    dependencies: [PHASE-2]
+    evidence:
+      - "v2.0.0: memory persists across restart and across llama.cpp / Ollama / planner fallback (EVAL-2026-11-02-001 RUB-001, RUB-005 evidence); installed-disk test showed a taught fact surviving poweroff and reboot."
+  - id: MEM-R08
+    statement: Prevent shared-memory reconciliation from erasing material disagreement.
+    priority: P0
+    status: not_started
+    mandatory: true
+    source: roadmap Section 5
+    acceptance_criteria:
+      - Reconciliation keeps minority findings addressable in shared memory (see INV-002).
+    verification_method: Phase-3/4 reconciliation tests with seeded disagreement
+    dependencies: [PHASE-3, PHASE-4]
+
+  # ---- Agency / authority requirements (roadmap Section 3) ----
+  - id: AG-008
+    statement: Authority must be explicit and inspectable.
+    priority: P0
+    status: in_progress
+    mandatory: true
+    source: roadmap Section 3
+    acceptance_criteria:
+      - Tier assignments and grants exist as data that the operator can read without reading source code.
+      - Runtime decisions cite the registry state they were made from.
+    verification_method: registry inspection; Phase-4 enforcement tests
+    dependencies: [PHASE-4]
+    evidence:
+      - "Phase 0: registry/authority-tiers.yaml defines the ADR-001 tiers as data. Enforcement does not exist yet (EVAL-2026-11-02-001 RUB-008 = 1)."
+  - id: AG-009
+    statement: Autonomy must not be reduced to simulated preferences.
+    priority: P1
+    status: not_started
+    mandatory: true
+    source: roadmap Section 3
+    acceptance_criteria:
+      - Initiative and method-selection behavior is driven by recorded goals, evidence, and authority — and can be explained from records.
+    verification_method: Phase-6 design review and behavior tests
+    dependencies: [PHASE-6]
+  - id: AG-010
+    statement: The system may challenge a directive without automatically gaining veto power.
+    priority: P1
+    status: not_started
+    mandatory: true
+    source: roadmap Section 3
+    acceptance_criteria:
+      - Challenges are recorded with rationale (decision log); execution authority remains as assigned by the tiers.
+    verification_method: Phase-6 governance tests
+    dependencies: [PHASE-4, PHASE-6]
+  - id: AG-011
+    statement: No component may grant itself unrestricted authority.
+    priority: P0
+    status: in_progress
+    mandatory: true
+    source: roadmap Section 3, as operationally reframed by ADR-001 (no UNRECORDED self-grant)
+    acceptance_criteria:
+      - Every authority change is a decision-log event with prior text, new text, and rationale.
+      - An audit can enumerate every authority change ever made.
+    verification_method: decision-log audit; Phase-4 enforcement tests
+    dependencies: [PHASE-4]
+    evidence:
+      - "ADR-001 (2026-11-02) fixes the interpretation and the control surface; the decision log itself is Phase-4 work and does not exist yet."
+  - id: AG-012
+    statement: The system must be able to request resources with a reasoned justification.
+    priority: P1
+    status: not_started
+    mandatory: true
+    source: roadmap Section 3
+    acceptance_criteria:
+      - A resource request records the need, the justification, and the outcome (INT-006).
+    verification_method: Phase-6 behavior tests
+    dependencies: [PHASE-6]
+  - id: AG-013
+    statement: Delegated permissions and their changes must be recorded.
+    priority: P0
+    status: not_started
+    mandatory: true
+    source: roadmap Section 3
+    acceptance_criteria:
+      - The authority registry's grants list is the single record of delegations; changes are decision-log events.
+    verification_method: registry inspection; Phase-6 tests
+    dependencies: [PHASE-6]
+    evidence:
+      - "Phase 0: registry/authority-tiers.yaml carries an empty grants list by design; no delegations exist."
+  - id: AG-014
+    statement: The system must distinguish a refusal, an inability, and a request for review.
+    priority: P1
+    status: not_started
+    mandatory: true
+    source: roadmap Section 3
+    acceptance_criteria:
+      - Responses and records label which of the three occurred, with the governing reason (policy restriction, technical impossibility, or value conflict).
+    verification_method: Phase-4/6 behavior tests
+    dependencies: [PHASE-4]
+
+# ---- Phase deliverable tracking (roadmap Section 10) ----
+# Roadmap phase statuses stay as the roadmap records them; this section
+# tracks deliverables. PHASE-0 deliverables are evidenced by this
+# scaffolding. Later-phase deliverables are listed for tracking; the
+# out-of-order partial implementations in v2.0.0 are assessed in
+# EVAL-2026-11-02-001 (phase_mapping_against_roadmap), not here.
+phases:
+  - id: PHASE-0
+    name: Architecture contract and repository foundation
+    status: in_progress
+    deliverables:
+      - {name: architecture_specification, status: implemented, evidence: architecture/contract/architecture-contract.yaml}
+      - {name: component_interfaces, status: implemented, evidence: architecture/contract/component-interfaces.yaml}
+      - {name: configuration_schema, status: implemented, evidence: architecture/contract/config-schema.yaml}
+      - {name: invariant_registry, status: implemented, evidence: architecture/contract/invariants/invariants.yaml}
+      - {name: decision_and_change_record_formats, status: implemented, evidence: architecture/contract/schemas/}
+      - {name: test_harness, status: implemented, evidence: architecture/tests/run.sh}
+    acceptance:
+      - "All foundational invariants have stable identifiers. (INV-001..012 in the registry; harness cross-checks the roadmap.)"
+      - "Component boundaries and responsibilities are documented. (contract + interfaces)"
+      - "Proposed and mandatory requirements are distinguishable. (mandatory flag in the requirement schema and this tracker)"
+      - "Automated checks can detect malformed configuration and records. (harness validates fixtures: valid passes, malformed is rejected)"
+  - id: PHASE-1
+    name: Minimal local runtime
+    status: not_started
+    deliverables: [local_runtime, unified_conversation_interface, interaction_manager, task_lifecycle, structured_event_log, resource_monitor]
+  - id: PHASE-2
+    name: Shared memory and continuity
+    status: not_started
+    deliverables: [versioned_memory_schema, provenance_records, task_memory, episodic_history, self_model_storage, backup_and_restore]
+  - id: PHASE-3
+    name: Cognitive components
+    status: not_started
+    deliverables: [hemisphere_a_adapter, hemisphere_b_adapter, model_registry, structured_reasoning_reports, component_specific_working_state]
+  - id: PHASE-4
+    name: Corpus Callosum core
+    status: not_started
+    deliverables: [routing_and_coordination, interpretation_reconciliation, disagreement_records, permission_enforcement, self_model_verification, update_registry, commit_and_rollback_service]
+  - id: PHASE-5
+    name: Adaptive coordination modes
+    status: not_started
+    deliverables: [mode_selection_policy, parallel_or_sequential_execution, adversarial_evaluation, deliberation_protocol, isolated_experiment_runner]
+  - id: PHASE-6
+    name: Integrated agency and self-governance
+    status: not_started
+    deliverables: [agency_framework, explicit_authority_registry, initiative_and_task_proposals, interest_representation, integrity_objection_mechanism, governance_conflict_resolution]
+  - id: PHASE-7
+    name: OS interaction and practical autonomy
+    status: not_started
+    deliverables: [file_operations, application_and_process_interfaces, tool_permission_system, action_verification, task_recovery, user_confirmation_policy]
+  - id: PHASE-8
+    name: Validated developmental evolution
+    status: not_started
+    deliverables: [capability_evaluation, regression_benchmarks, change_proposal_pipeline, artifact_versioning, controlled_model_or_adapter_updates, architectural_evolution_loop]
+  - id: PHASE-9
+    name: Mature integrated system
+    status: not_started
+    deliverables: [long_duration_tests, fault_injection_tests, resource_stress_tests, architecture_conformance_report, recovery_drills, user_override_and_audit_validation]

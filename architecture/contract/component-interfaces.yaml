@@ -1,0 +1,277 @@
+# NeurAI OS — Component Interfaces (Phase-0 definition)
+#
+# Interface contract for the three constituent components and the shared
+# services, per roadmap Sections 2, 4, 6, and 7. These are definitions to
+# build against, not implementations: every component below is
+# `not_implemented` in the shipped v2.0.0 except where an
+# `existing_mapping` note records how the current core partially covers
+# the surface today (evidence: roadmap/evaluation-v2.0.0.yaml).
+#
+# Conventions:
+# - All inter-component payloads are structured records, never free text
+#   alone, so the CC can reconcile without erasing disagreement (INV-002,
+#   INV-009) and every material claim carries evidence (INV-006).
+# - `reasoning_report` is the single output shape for both hemispheres.
+# - The CC's enforcement and commit interfaces are deterministic; any
+#   reasoning engine attached to the CC is advisory only (roadmap §2).
+
+shared_record_formats:
+  reasoning_report:
+    description: >-
+      Structured findings emitted by a hemisphere for one unit of work.
+      Fields combine the roadmap Section 4 interpretation record with the
+      hemisphere requirements of Section 2.
+    fields:
+      component_id: {type: string, enum: [HEM-A, HEM-B], required: true}
+      task_reference: {type: string, required: true}
+      original_input_reference: {type: string, required: true, note: "Pointer to the unmodified user input; reconciliation must never replace it."}
+      perceived_intent: {type: string, required: true}
+      relevant_context: {type: list, required: true}
+      assumptions: {type: list, required: true}
+      ambiguity: {type: list, required: false}
+      findings: {type: list, required: true}
+      confidence: {type: number, required: true, range: [0, 1]}
+      supporting_evidence: {type: list, required: true}
+      alternatives: {type: list, required: false}
+      unresolved_questions: {type: list, required: false}
+      proposed_actions: {type: list, required: false, note: "Proposals only; a hemisphere never commits directly."}
+  integrated_task_context:
+    description: Produced by the CC from the original input plus both reasoning reports.
+    fields:
+      original_input_reference: {type: string, required: true}
+      component_reports: {type: list, required: true, note: "References to HEM-A / HEM-B reasoning reports."}
+      agreements: {type: list, required: false}
+      material_disagreements: {type: list, required: false, note: "Preserved, never silently reconciled away (INV-002, MEM-R08)."}
+      selected_execution_mode: {type: string, enum: [MODE-001, MODE-002, MODE-003, MODE-004], required: true}
+      mode_selection_rationale: {type: string, required: true, note: "Mode selection must be explainable (roadmap Section 4)."}
+  decision_record:
+    description: >-
+      Append-only record the CC emits for every material decision,
+      governance change, and authority event (ADR-001 decision-log rule;
+      roadmap Sections 3 and 12).
+    fields:
+      decision_id: {type: string, required: true}
+      timestamp: {type: string, format: iso-8601, required: true}
+      kind: {type: string, enum: [coordination, commit, authority_change, governance_change, objection, escalation], required: true}
+      subject: {type: string, required: true}
+      rationale: {type: string, required: true}
+      alternatives_considered: {type: list, required: false}
+      unresolved_objections: {type: list, required: false}
+      authority_tier: {type: string, enum: [free, gated_integrity, gated_irreversible], required: true}
+      change_record_reference: {type: string, required: false}
+      prior_text: {type: string, required: false, note: "Required for governance_change: ADR-001 requires prior text, new text, and rationale."}
+      new_text: {type: string, required: false, note: "Required for governance_change."}
+  change_proposal:
+    description: Roadmap Section 8 proposal schema; machine format in schemas/change-proposal.schema.yaml.
+    fields:
+      - proposal_id
+      - change_class
+      - origin
+      - parent_version
+      - artifact_reference
+      - rationale
+      - expected_benefit
+      - known_risks
+      - affected_components
+      - dependencies
+      - validation_plan
+      - rollback_plan
+      - status
+
+components:
+  - id: HEM-A
+    role: independent_cognitive_component
+    implementation_status: not_implemented
+    implementation_phase: PHASE-3
+    provides:
+      - name: interpret_and_reason
+        input: {original_input: string, task_context: reference, working_state: component_local}
+        output: reasoning_report
+        guarantees:
+          - Independent of HEM-B: no access to HEM-B's in-progress reasoning.
+          - Output retains uncertainty, assumptions, and evidence references (RUB-002).
+      - name: evaluate_proposal
+        input: {proposal: change_proposal}
+        output: reasoning_report
+        guarantees:
+          - Permits independent evaluation of changes, including changes the other hemisphere proposed.
+      - name: expose_state
+        input: {scope: "enum [capabilities, development_history, self_assessment]"}
+        output: structured_record
+        guarantees:
+          - Own model/reasoning configuration and development history are inspectable.
+    consumes:
+      - {service: SVC-001, use: "shared memory read/write under CC-governed integrity rules"}
+      - {service: SVC-004, use: "own model/adapter registration and version lookup"}
+      - {service: SVC-006, use: "resource budget for scheduled (possibly sequential) execution"}
+    must_not:
+      - commit changes to shared state directly (commits go through the CC)
+      - access or alter the authority registry or integrity machinery
+      - represent the entity to the user except through SVC-002
+    existing_mapping: >-
+      None. v2.0.0 has a single cognitive component (Qwen2.5-1.5B via
+      llama.cpp, deterministic planner fallback); no independent second
+      reasoner exists. EVAL-2026-11-02-001: RUB-002 = 0.
+
+  - id: HEM-B
+    role: independent_cognitive_component
+    implementation_status: not_implemented
+    implementation_phase: PHASE-3
+    provides:
+      - name: interpret_and_reason
+        input: {original_input: string, task_context: reference, working_state: component_local}
+        output: reasoning_report
+        guarantees:
+          - Independent of HEM-A: no access to HEM-A's in-progress reasoning.
+          - Output retains uncertainty, assumptions, and evidence references (RUB-002).
+      - name: evaluate_proposal
+        input: {proposal: change_proposal}
+        output: reasoning_report
+        guarantees:
+          - Permits independent evaluation of changes, including changes the other hemisphere proposed.
+      - name: expose_state
+        input: {scope: "enum [capabilities, development_history, self_assessment]"}
+        output: structured_record
+        guarantees:
+          - Own model/reasoning configuration and development history are inspectable.
+    consumes:
+      - {service: SVC-001, use: "shared memory read/write under CC-governed integrity rules"}
+      - {service: SVC-004, use: "own model/adapter registration and version lookup"}
+      - {service: SVC-006, use: "resource budget for scheduled (possibly sequential) execution"}
+    must_not:
+      - commit changes to shared state directly (commits go through the CC)
+      - access or alter the authority registry or integrity machinery
+      - represent the entity to the user except through SVC-002
+    existing_mapping: >-
+      None. Spawned sub-agents in v2.0.0 are subordinate task workers with
+      inherited memory copies, not persistent independent components
+      (EVAL-2026-11-02-001, RUB-002 failed checks).
+
+  - id: CC
+    role: coordination_metacognition_and_self_governance
+    implementation_status: not_implemented
+    implementation_phase: PHASE-4
+    implementation:
+      initial_core: deterministic_governance_and_coordination
+      reasoning_engine_role: advisory_only
+      note: >-
+        Separation of reasoning and commit authority is the core security
+        property (roadmap Section 9): the CC cannot bypass enforced
+        permissions through ordinary reasoning output (Phase-4 acceptance).
+    provides:
+      - name: coordinate
+        input: {original_input: string, reports: [reasoning_report]}
+        output: integrated_task_context
+        guarantees:
+          - Original input remains accessible and authoritative.
+          - Material disagreement is preserved in the output record.
+      - name: enforce_authority
+        input: {actor: component_id, action: action_description, target: artifact_reference}
+        output: {decision: "enum [permitted_free, permitted_gated, denied, requires_operator]", tier: authority_tier, rationale: string}
+        guarantees:
+          - Deterministic: same registry state + same action always yields the same decision.
+          - Tier data is loaded from registry/authority-tiers.yaml (later: its runtime successor); enforcement code is itself gated_integrity.
+      - name: record_decision
+        input: {record: decision_record}
+        output: {appended: boolean, log_reference: string}
+        guarantees:
+          - Append-only: records are never edited or deleted in place.
+          - Governance changes include prior text, new text, and rationale (ADR-001).
+      - name: commit_change
+        input: {proposal: change_proposal, validation_results: record}
+        output: {committed: boolean, change_record_reference: string, rollback_reference: string}
+        guarantees:
+          - Follows the Section 8 lifecycle; unvalidated changes are never committed.
+          - Free-tier commits require staging, validation, and a pre-commit backup (ADR-001).
+          - Gated tiers are refused here and routed to the operator path.
+      - name: verify_self_model
+        input: {domain: string}
+        output: {claims: list, evidence: list, stale_or_contradictory: list}
+        guarantees:
+          - Self-model claims cite verification sources (source code, runtime config, observed behavior, tests, artifact hashes, independent assessment).
+      - name: raise_objection
+        input: {subject: string, grounds: string, evidence: list}
+        output: {recorded: boolean, decision_reference: string}
+        guarantees:
+          - Integrity objections are recorded even when overruled (roadmap Section 6, Phase-6 deliverable).
+    consumes:
+      - {service: SVC-001, use: "shared memory integrity management"}
+      - {service: SVC-005, use: "decision and event recording (the audit/decision log)"}
+      - {service: SVC-007, use: "validation, transactional commit, rollback"}
+      - {service: SVC-004, use: "capability and authority registry data"}
+    must_not:
+      - silently rewrite its own governance authority (any such change is a decision-log event; changes to the log mechanism itself are gated_integrity)
+      - commit unvalidated model or architecture changes
+      - silently replace the original input during reconciliation
+    existing_mapping: >-
+      Seed only. v2.0.0's deterministic planner, tool-loop guards, and
+      initiative approval queue are a plausible CC seed, but there is no
+      CC component, no permission enforcement, and reasoning and commit
+      authority are not separated: the model can invoke self_patch and
+      sys_write directly. EVAL-2026-11-02-001: RUB-003 = 1.
+
+services:
+  - id: SVC-001
+    name: Shared Memory
+    implementation_status: partial_in_v2 (single JSON file; no schema versioning, transactions, or per-claim provenance)
+    target_implementation_phase: PHASE-2
+    provides:
+      - {name: read, input: {category: "enum [MEM-001, MEM-002, MEM-003, MEM-004, MEM-005, MEM-006, MEM-007]", query: structured}, output: records_with_provenance}
+      - {name: write, input: {category: "enum [MEM-001, MEM-002, MEM-003, MEM-004, MEM-005, MEM-006, MEM-007]", record: provenance_record}, output: {committed: boolean, version: string}}
+      - {name: correct, input: {record_reference: string, correction: record}, output: {committed: boolean}, guarantees: ["Corrections preserve history (MEM-R03); conflicts and stale records are detectable (MEM-R04)."]}
+    target_store: SQLite with transactions and schema versioning (roadmap Section 5)
+  - id: SVC-002
+    name: Interaction Manager
+    implementation_status: partial_in_v2 (unified conversation interface exists; REPL + web console share one core)
+    target_implementation_phase: PHASE-1
+    provides:
+      - {name: receive_input, output: original_input_record, guarantees: ["Original input stored unmodified and referenceable by all components."]}
+      - {name: deliver_response, input: {integrated_context: reference, action_status: list}, output: user_response, guarantees: ["Action status distinguishes proposed, attempted, completed, and failed (INV-006)."]}
+      - {name: task_lifecycle, input: {task: record}, output: task_state, guarantees: ["States distinguish pending, running, completed, failed."]}
+  - id: SVC-003
+    name: Tool and OS Interface
+    implementation_status: partial_in_v2 (full shell/file access with no permission system; runs as root)
+    target_implementation_phase: PHASE-7
+    provides:
+      - {name: execute, input: {actor: component_id, tool: string, arguments: structured}, output: verified_result, guarantees: ["Every execution is authorized via CC.enforce_authority first; results are verified before success is reported."]}
+  - id: SVC-004
+    name: Model and Capability Registry
+    implementation_status: not_implemented (Phase-0 authority data exists at registry/authority-tiers.yaml)
+    target_implementation_phase: PHASE-3 (models) / PHASE-6 (authority registry)
+    provides:
+      - {name: lookup_capability, input: {capability: string}, output: {status: string, version: string, authority_tier: authority_tier}}
+      - {name: register, input: {artifact: reference, kind: "enum [model, adapter, tool, skill]"}, output: {registered: boolean}, guarantees: ["Registration is a recorded change (Section 8 lifecycle); tier assignments are data, and changing one is a decision-log event (ADR-001)."]}
+  - id: SVC-005
+    name: Event and Audit Log
+    implementation_status: partial_in_v2 (episode log + self_changes list in the memory JSON; not append-only-protected)
+    target_implementation_phase: PHASE-1 (structured event log) / PHASE-4 (protected store)
+    provides:
+      - {name: append, input: {event: structured_record}, output: {appended: boolean, reference: string}, guarantees: ["Append-only. The store is integrity machinery (gated_integrity, ADR-001)."]}
+      - {name: query, input: {filter: structured}, output: event_list}
+    protection_note: >-
+      The future protected home for this store is the installed system's
+      integrity volume. That is Phase-4 work; this scaffolding defines
+      the interface only and implements no volume access of any kind.
+  - id: SVC-006
+    name: Resource Manager
+    implementation_status: partial_in_v2 (single-model loading and planner fallback; no budget enforcement)
+    target_implementation_phase: PHASE-1
+    provides:
+      - {name: budget, input: {component_id: string, work: description}, output: {allocation: record}, guarantees: ["Supports sequential execution when resources are limited; exhaustion degrades gracefully, never corrupts state."]}
+      - {name: usage, output: {ram: record, cpu: record, storage: record}}
+  - id: SVC-007
+    name: Validation and Recovery
+    implementation_status: partial_in_v2 (self_patch staging, syntax check, timestamped backups, tested rollback; backup code lives in the same file as the patch code)
+    target_implementation_phase: PHASE-4
+    provides:
+      - {name: validate, input: {proposal: change_proposal}, output: validation_results}
+      - {name: snapshot, input: {artifact: reference}, output: {backup_reference: string}}
+      - {name: commit, input: {proposal: change_proposal, validation_results: record}, output: {committed: boolean, change_record_reference: string}}
+      - {name: rollback, input: {change_record_reference: string}, output: {restored: boolean}, guarantees: ["Rollback mechanism is integrity machinery (gated_integrity, ADR-001) and must be factored out of the patchable core (ADR-001 follow-up)."]}
+  - id: SVC-008
+    name: Agency Framework
+    implementation_status: partial_in_v2 (initiative proposals exist; no interest representation or objection mechanism)
+    target_implementation_phase: PHASE-6
+    provides:
+      - {name: propose_initiative, input: {goal: string, rationale: string, resource_request: optional}, output: {recorded: boolean}}
+      - {name: record_interest, input: {interest_id: "enum [INT-001, INT-002, INT-003, INT-004, INT-005, INT-006, INT-007]", evidence_category: "enum [designed_interest, expressed_interest, observed_behavior, inferred_interest, unresolved_experiential_question]", evidence: list, confidence: number}, output: {recorded: boolean}, guarantees: ["An inferred interest is never labeled an expressed one (roadmap Section 3)."]}

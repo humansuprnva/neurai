@@ -1,0 +1,24 @@
+# Record schema: change proposal (roadmap Section 8, proposal_schema)
+record_type: change_proposal
+source: roadmap/neurai-roadmap-1.1.0.yaml, Section 8 (change_governance.proposal_schema)
+lifecycle: [propose, classify, assess_impact, preserve_current_state, validate_dependencies, test_in_isolation, conduct_independent_review, evaluate_against_invariants, authorize, commit_atomically_where_feasible, verify_post_commit, record_outcome, rollback_if_required]
+change_classes: [CHG-001, CHG-002, CHG-003, CHG-004, CHG-005, CHG-006, CHG-007]
+fields:
+  proposal_id: {type: string, required: true}
+  change_class: {type: string, required: true, enum: [CHG-001, CHG-002, CHG-003, CHG-004, CHG-005, CHG-006, CHG-007]}
+  origin: {type: string, required: true, note: "Component, operator, or process that proposed the change."}
+  parent_version: {type: string, required: true}
+  artifact_reference: {type: string, required: true}
+  rationale: {type: string, required: true}
+  expected_benefit: {type: string, required: true}
+  known_risks: {type: list, required: true}
+  affected_components: {type: list, required: true}
+  dependencies: {type: list, required: true}
+  validation_plan: {type: string, required: true}
+  rollback_plan: {type: string, required: true}
+  status: {type: string, required: true, enum: [proposed, classified, assessed, validated, reviewed, authorized, committed, verified, rolled_back, rejected]}
+  authority_tier: {type: string, required: false, enum: [free, gated_integrity, gated_irreversible], note: "ADR-001 classification of the change's effects; determines the authorization path. Mandatory in practice from Phase 4 onward."}
+rules:
+  - Consensus alone cannot authorize a change.
+  - No unvalidated model update may be promoted to active status.
+  - CHG-007 changes follow ADR-001: append-only decision log and post-hoc review, except changes touching the integrity machinery, which require strict review and operator authorization (gated_integrity).

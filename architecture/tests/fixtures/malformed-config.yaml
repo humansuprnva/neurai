@@ -1,0 +1,23 @@
+# Malformed example configuration. Must FAIL tests/validate_records.py.
+# Defects, one per schema rule:
+#   1. required top-level section `authority` is missing
+#   2. runtime.execution_scheduling is outside its enum
+#   3. memory.transactions is false (contract violation, not a setting)
+#   4. models.allow_network_models is true (foundational config is local-only)
+schema_version: "0.1.0"
+runtime:
+  target_ram_gb: 8
+  execution_scheduling: whenever
+  degrade_under_pressure: true
+models:
+  hemisphere_a: {model_ref: local/qwen2.5-1.5b-instruct}
+  hemisphere_b: {model_ref: local/qwen2.5-1.5b-instruct}
+  allow_network_models: true
+memory:
+  store: sqlite
+  path: /neurai/data/memory.db
+  schema_version: "1"
+  transactions: false
+  backups: {enabled: true}
+logging:
+  event_log_ref: /neurai/data/events

@@ -1,0 +1,22 @@
+# Record schema: architecture decision (roadmap Section 12)
+record_type: architecture_decision
+source: roadmap/neurai-roadmap-1.1.0.yaml, Section 12 (records.architecture_decision)
+storage: >-
+  Full decision records live in roadmap/decisions/ as individual files
+  (see ADR-001). records/decisions.yaml indexes them and carries these
+  summary fields plus record_path.
+fields:
+  decision_id: {type: string, required: true, pattern: "^ADR-[0-9]+$"}
+  date: {type: string, required: true}
+  context: {type: string, required: true}
+  alternatives: {type: list, required: true, min_items: 1}
+  chosen_option: {type: string, required: true}
+  rationale: {type: string, required: true}
+  affected_invariants: {type: list, required: true}
+  known_tradeoffs: {type: list, required: true}
+  review_trigger: {type: string, required: true}
+  status: {type: string, required: true, enum: [proposed, accepted, superseded, rejected]}
+  record_path: {type: string, required: true, note: "Path to the full record file under roadmap/decisions/."}
+rules:
+  - A decision that amends the roadmap must keep the prior roadmap version preserved and note the amendment (project operating rules).
+  - Governance or authority decisions must state their effect on INV-007 explicitly when relevant.

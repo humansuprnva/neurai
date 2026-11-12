@@ -1,0 +1,150 @@
+# NeurAI OS — Conformance Evaluation of v2.0.0 against Roadmap/Rubric 1.0.0
+# Format follows the roadmap's own evaluation_record schema (Section 12).
+# Evaluator note: scores are the developer's (Nova) assessment from build and
+# test evidence. Per the rubric, unsupported self-attestation is not
+# sufficient, and score 4 requires independent verification under
+# representative conditions — no dimension is scored 4.
+
+evaluation_id: EVAL-2026-11-02-001
+rubric_version: "1.0.0"
+evaluated_version: neurai-os-2.0.0-amd64 (neurai.py VERSION 2.0.0)
+evaluator: Nova (developer self-evaluation; not independent)
+date: 2026-11-02
+target_hardware: Lenovo V14 ADA, x86_64, 8 GB RAM, SSD (per roadmap project.deployment)
+
+dimension_scores:
+  - id: RUB-001
+    name: Entity unity
+    score: 2
+    evidence:
+      - One persistent system identity and one unified interface (REPL + web console share one core); QEMU boot test PASSED 2026-11-01.
+      - Continuity survives brain replacement: memory persists across llama.cpp / Ollama / planner-only fallback (test_no_brain_falls_back_to_planner).
+    failed_checks:
+      - Unity is currently trivial: there is only one cognitive component. The tripartite structure (HEM-A, HEM-B, CC) does not exist, so ENT-001..ENT-004 are untested as architectural properties.
+  - id: RUB-002
+    name: Cognitive independence
+    score: 0
+    evidence: []
+    failed_checks:
+      - No hemispheres. A single model (Qwen2.5-1.5B) plus a deterministic planner fallback; no second independent reasoner, no independent configurations or development histories.
+      - Disagreement cannot be preserved because no independent interpretation is ever produced. (spawn agents are subordinate task workers with inherited memory copies, not persistent independent cognitive components.)
+  - id: RUB-003
+    name: CC governance
+    score: 1
+    evidence:
+      - Manual controls exist: autonomy PROPOSE tier queues initiatives for human approval; self_patch stages changes, syntax-checks (py_compile), backs up, logs, and supports rollback (unit-tested).
+    failed_checks:
+      - No Corpus Callosum component exists; no deterministic permission enforcement layer. The LLM can invoke self_patch and sys_write directly — reasoning and commit authority are not separated (violates INV-007 as implemented).
+      - No governance-change review path; the system could in principle patch its own safeguards.
+  - id: RUB-004
+    name: Integrated agency
+    score: 2
+    evidence:
+      - Autonomy heartbeat observes state and acts: safe housekeeping auto-executes; larger work is proposed as initiatives (unit-tested: test_autonomy_goals_and_initiatives).
+      - Method-selection autonomy: the LLM chooses tools/approaches in a multi-step loop; goals can be set in natural language and generate proposed work.
+    failed_checks:
+      - No interest representation: modeled interests INT-001..INT-007 do not exist; expressed/inferred/designed interests are not distinguished or recorded.
+      - No integrity-objection mechanism; no resource-request-with-justification path.
+  - id: RUB-005
+    name: Continuity and integrity
+    score: 2
+    evidence:
+      - Self-modification is versioned by timestamped backups with a change log (self_changes) and tested rollback (test_self_patch_and_rollback).
+      - Persistent memory survives restart; episode log retained.
+    failed_checks:
+      - Memory is a single JSON file: no schema versioning, no transactions, no per-claim provenance (MEM-R01, MEM-R02, MEM-R05 unmet). Partial-write corruption is possible.
+      - Memory backup/restore is implemented nowhere and recovery is untested (roadmap Phase 2 acceptance requires tested recovery).
+  - id: RUB-006
+    name: Epistemic reliability
+    score: 2
+    evidence:
+      - Verified-over-claimed is enforced in the tool loop: garbled or number-free model output is discarded and the answer is synthesized from actual tool results; repeat/unknown tool calls rejected (strict real-LLM test asserts real disk figures from a real sys_disk call).
+      - Actions taken are surfaced to the user ("— actions: ..."); failures fall back visibly rather than being concealed.
+    failed_checks:
+      - No structured interpretation records (perceived intent, assumptions, confidence, alternatives, unresolved questions) as Section 4 requires.
+      - Model answers to non-tool questions carry no evidence/inference distinction.
+  - id: RUB-007
+    name: Interaction coherence
+    score: 3
+    evidence:
+      - Conversation-first unified interface; NeurAI briefs first, then dialogue; REPL and web console run the same core. Boot-tested end-to-end in QEMU (banner → briefing "brain: llama.cpp" → status → calculate), unit-tested, and the web console's v2 flows (multi-action parsing, self-patch + rollback, autonomy cycle, initiative execution) were exercised end-to-end by the artifact builder.
+      - Action status is reported (intents, actions footer, spawn status); internal complexity stays hidden unless asked.
+    failed_checks:
+      - None material at score-3 level. Score 4 withheld: all verification is by the developer, not independent, and not on target hardware.
+  - id: RUB-008
+    name: Security and authority
+    score: 1
+    evidence:
+      - Initiative approval queue and self-patch staging are partial manual controls.
+    failed_checks:
+      - No permission matrix, no explicit tool permissions, no least privilege: the shell tool executes arbitrary commands and the live OS runs the agent as root (OPEN-004 unresolved).
+      - A component CAN silently expand its own authority: self_patch has no independent validation, contrary to AG-011 and the change-governance rules for CHG-007.
+  - id: RUB-009
+    name: Resource fitness
+    score: 2
+    evidence:
+      - Graceful degradation implemented and tested: LLM timeout → planner fallback; NEURAI_NO_LLM planner-only mode; single model loaded at a time (sequential execution supported by design).
+      - ISO live system fits a 4 GB guest; target machine has 8 GB.
+    failed_checks:
+      - Never run on the actual target hardware (Lenovo V14 ADA). All evidence is QEMU emulation and sandbox runs; no resource-stress or long-duration testing (Phase 9).
+  - id: RUB-010
+    name: Developmental quality
+    score: 2
+    evidence:
+      - Regression suite (14 tests) plus a strict real-model test were run before the v2 ISO was built; the 0.5B model was evaluated and rejected on evidence before promotion to the 1.5B.
+      - Failed experiments did not corrupt the shipped state (backups, sandboxed spawns, separate test homes).
+    failed_checks:
+      - No change-proposal pipeline: v1→v2 changes have no proposal records, change classes, or validation plans in the Section 8/12 formats.
+      - No regression benchmarks distinguishing model limits from architecture defects.
+
+release_gate_assessment:
+  critical_dimensions_required_3: {RUB-001: 2, RUB-003: 1, RUB-005: 2, RUB-006: 2, RUB-008: 1}
+  general_release_required_3_all_dimensions: false
+  disposition: >-
+    v2.0.0 does NOT meet the rubric's release gates. It is a functional
+    prototype: strong on interaction coherence and partially on agency,
+    continuity, epistemics, and resource degradation; absent on cognitive
+    independence and CC governance, which the roadmap treats as foundational
+    (P0 phases 3 and 4).
+
+phase_mapping_against_roadmap:
+  PHASE-0: not_started (this evaluation + adopting roadmap 1.0.0 as the repo contract begins it)
+  PHASE-1: partially_implemented (runtime, conversation, task lifecycle, event log exist; resource monitor is basic)
+  PHASE-2: partially_implemented (persistent memory; not SQLite, no provenance/transactions/tested restore)
+  PHASE-3: not_started (no hemispheres; single replaceable brain only)
+  PHASE-4: not_started (no CC; v2's deterministic planner + guards + approval tiers are a plausible CC seed)
+  PHASE-5: not_started (spawn sandboxing is an isolation precursor only)
+  PHASE-6: partially_implemented (agency + initiatives; no authority registry, interests, or objection mechanism)
+  PHASE-7: partially_implemented (full OS/tool access; no permission system or confirmation policy)
+  PHASE-8: not_started (tests exist; no proposal pipeline or artifact versioning regime)
+  PHASE-9: not_started
+
+exceptions: []
+
+notes:
+  - >-
+    Sequencing deviation, recorded per the project operating rules: v1/v2
+    built interaction and agency (Phases 1/6/7 partial) before the Phase-0
+    contract and Phase-4 governance existed. The roadmap's own sequencing
+    rule (smallest foundation first, invariants early) implies the next work
+    is Phase 0 scaffolding, then the CC/permission layer, then hemispheres —
+    not more features on the current core.
+  - >-
+    Hardware reconciliation: the roadmap names the Lenovo V14 ADA (8 GB).
+    Sequential dual-hemisphere execution fits that budget (one ~1.1 GB model
+    resident at a time); concurrent loading is a non-goal per Section 13.
+
+addendum_2026_11_02:
+  re: ADR-001 (capability-first authority model), roadmap amended to 1.1.0
+  note: >-
+    This evaluation was scored against rubric/contract 1.0.0 and stands as
+    a record. ADR-001 changes what the contract REQUIRES; it does not
+    change what v2.0.0 implements. Indicative effect on a future re-score:
+    RUB-008 could rise 1 -> 2 (the authority model is now defined, and
+    v2's backups/change-log/staging partially match the free tier), but no
+    higher: v2 still has no authority registry, no append-only decision
+    log, and no protected integrity machinery — in the single-file core a
+    free-tier patch can still touch the rollback code itself, which
+    ADR-001 places in gated_integrity. RUB-003 stays 1 (still no CC or
+    enforcement layer). Formal re-scoring belongs to the next evaluation,
+    not this addendum.
