@@ -55,3 +55,51 @@ decisions:
       full conformance evaluation.
     amends: roadmap/neurai-roadmap-1.0.0.yaml -> roadmap/neurai-roadmap-1.1.0.yaml (authority.default_policy, CHG-007 scrutiny)
     record_path: roadmap/decisions/ADR-001-capability-first-authority.yaml
+
+  - decision_id: ADR-002
+    date: "2026-11-12"
+    title: Cluster topology, hemisphere disposition model, and proportional deliberation policy
+    status: proposed
+    decided_by: "pending — operator direction recorded 2026-11-12; acceptance by Levi Nord outstanding"
+    context: >-
+      Operator direction of 2026-11-12: the two-hemisphere design is the
+      engine of self-improvement (adversarial and collaborative); the
+      hemispheres should be distinct yet share a wireframe; NeurAI will run
+      across a multi-machine fleet, not only the Lenovo; and a fixed
+      deliberation limit is too restrictive. Roadmap 1.1.0 and
+      deployment-host.md assume a single 8 GB host with sequential execution,
+      and PHASE4-SPEC-001 leaves deliberation termination open (OQ-1).
+    alternatives:
+      - "ALT-A: Single-node sequential execution as the only target — rejected as sole target, retained as the degraded mode"
+      - "ALT-B: Fixed role-to-machine binding — rejected"
+      - "ALT-C: Placement as configuration; disposition-based hemispheres; policy-driven deliberation visibility — chosen"
+      - "ALT-D: Hemispheres differentiated by domain specialization — rejected for v1"
+      - "ALT-E: Fully distinct model families from the outset — deferred as the v3 upgrade path"
+      - "ALT-F: Fixed deliberation round cap with automatic escalation — rejected by the operator"
+      - "ALT-G: No limit and no surfacing — rejected"
+    chosen_option: ALT-C
+    rationale: >-
+      Components are addressed by id, not host, so single-node, time-sliced,
+      and multi-node deployments are one design (the Phase 4 boundary already
+      assumes this). The CC and integrity store are co-located and physically
+      separate from inference nodes. Hemispheres share one record contract,
+      identical information and a memory snapshot reference, and comparable
+      capability, and differ in disposition (focused versus broad), treated as
+      a hypothesis to evaluate under RUB-010. Deliberation has no round cap;
+      proportionality is per-action-type surfacing policy that never
+      terminates or decides.
+    affected_invariants: [INV-002, INV-007, INV-003, INV-004]
+    known_tradeoffs:
+      - A cluster removes ADR-001's "no default network exposure" premise for node-to-node traffic; transport security review is required before multi-node placement.
+      - Same-family hemispheres have correlated blind spots, limiting what adversarial pressure can reveal.
+      - Fleet is modest CPU-only hardware with unconfirmed Ruby R3 RAM; nothing in this ADR has been measured on real hardware.
+      - Unbounded deliberation is visible but not capped; consumption limits belong to Phase 7 resource budgets.
+      - Whether the focused/broad split yields informative divergence is unproven.
+    review_trigger: >-
+      The first of: (a) OPEN-001 benchmark results that make a candidate
+      placement infeasible; (b) the first multi-node transport
+      implementation; (c) evidence that hemisphere divergence is
+      uninformative; (d) the Phase 5 coordination design; or (e) the next
+      full conformance evaluation.
+    amends: "none yet; on acceptance, roadmap 1.1.0 -> 1.2.0 and a PHASE4-SPEC-001 v1.1.0 addendum"
+    record_path: roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml
