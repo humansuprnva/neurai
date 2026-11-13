@@ -1,0 +1,325 @@
+# Architecture Decision Record — NeurAI OS
+# Format: roadmap Section 12 (architecture_decision required fields),
+# extended with the decision's operative detail, following ADR-001.
+#
+# STATUS: PROPOSED. Drafted from operator direction given in conversation on
+# 2026-11-12; not yet reviewed or accepted. Nothing in this record changes the
+# roadmap, the Phase 4 specification, or any code until it is accepted.
+
+decision_id: ADR-002
+date: 2026-11-12
+title: Cluster topology, hemisphere disposition model, and proportional deliberation policy
+status: proposed
+decided_by: pending — operator direction recorded below; formal acceptance by Levi Nord outstanding
+drafted_by: Claude
+amends: >-
+  Nothing yet. On acceptance: neurai-roadmap-1.1.0.yaml -> 1.2.0
+  (hardware_updates, "sequential model execution stands"), PHASE4-SPEC-001
+  v1.0.0 -> v1.1.0 addendum (OQ-1 resolution and the follow-ups listed under
+  consequences), and roadmap/deployment-host.md (topology section). Prior
+  versions are preserved per the project operating rules.
+
+context: >-
+  Four operator directions of 2026-11-12 are not reflected in the current
+  contract. (1) The two-hemisphere design is essential, not incidental: it is
+  the engine of self-improvement, operating both adversarially and
+  collaboratively. (2) The hemispheres should be distinct from each other yet
+  share a "wireframe" so that they remain familiar to each other, and the
+  distinction should emulate the human brain. (3) NeurAI will not run only on
+  the Lenovo V14 ADA; Levi has additional mini PCs and intends a local /
+  private-cloud arrangement with fluid compute. (4) A fixed, concrete limit
+  on deliberation is too restrictive; limits should differ by task and
+  decision. Against these: roadmap 1.1.0 and deployment-host.md assume a
+  single 8 GB host with sequential, one-model-at-a-time execution;
+  PHASE4-SPEC-001 lists runtime distribution as a Phase 4 non-goal and leaves
+  deliberation termination open as OQ-1 (interim: no limit, operator
+  resolution is the only non-convergent exit). The fleet is already recorded
+  as provisional in deployment-host.md (Lenovo = interface, Simply NUC Ruby
+  R3 = inference, Intel NUC6i3SYH = memory); it is modest, CPU-only hardware
+  and the Ruby R3's RAM is unconfirmed (8 or 16 GB). The roadmap already
+  defines the coordination modes this direction needs: MODE-001 conjunction
+  (the collaborative half) and MODE-002 opposition (the adversarial half),
+  with mode selection weighed by consequence, uncertainty, reversibility and
+  available resources. This ADR does not add modes; it fixes the topology,
+  the hemisphere-differentiation principle, and the deliberation policy that
+  those modes will run on.
+
+decision_parts:
+  - id: D1
+    name: Placement is configuration, not architecture
+    statement: >-
+      Components are addressed by component id (HEM-A, HEM-B, CC, EXECUTOR),
+      never by host. Every exchange between components crosses the Phase 4
+      serialization boundary (spec S-1), which already makes in-process,
+      same-node, and cross-node deployments the same design. Where a
+      component runs is a deployment configuration, not a property of the
+      architecture. Principles: (T-1) single-node sequential execution
+      remains valid as the degraded mode, consistent with roadmap
+      mode_selection ("resource constraints may limit parallel execution
+      without invalidating the architecture") and PHASE-3 acceptance ("system
+      remains functional when only one component is available"). (T-2) The CC,
+      its AuditLogWriter, and the integrity store are co-located on one node
+      so the single-writer rule (spec 11.1) holds. That node hosts no
+      hemisphere write path to the integrity store; hemisphere nodes reach the
+      CC only through the boundary. The CC is deterministic and model-free, so
+      it needs little compute; separating it physically from inference nodes
+      is the network-level realization of ADR-001's gated_integrity tier, as
+      the separate integrity partition is its disk-level one. (T-3)
+      Re-hosting a hemisphere is a free-tier configuration change. Re-hosting
+      the CC, the audit store, or the backup store is gated_integrity, because
+      it moves the integrity machinery. (T-4) Concrete placement is NOT decided
+      here. It follows OPEN-001 benchmarks on the real fleet. Candidates to
+      benchmark - P1: HEM-A on the Ruby R3, HEM-B on the Lenovo, CC / integrity
+      / memory on the NUC6; P2: both hemispheres time-sliced on the Ruby R3
+      with CC on the NUC6 (the degraded mode); P3: HEM-B on the NUC6 with the
+      CC on the Lenovo. The deployment-host.md provisional table is consistent
+      with P1 and P2 and is unchanged by this ADR.
+
+  - id: D2
+    name: Hemispheres differ in disposition, not in information or capability
+    statement: >-
+      The "shared wireframe" is five things. (W-1) The shared record contract:
+      the Phase 4 records and boundary, fixed. (W-2) Information symmetry: for
+      a given task both hemispheres receive the identical original input and
+      read an identical memory snapshot, so that divergence reflects judgment
+      over the same facts and never differing access. With hemispheres on
+      different machines and running concurrently, "the same memory" is not
+      automatic because memory changes between reads; task dispatch therefore
+      MUST carry a memory snapshot reference that both hemispheres read from.
+      Stance differences MUST NOT be implemented as differences in what a
+      hemisphere is permitted to see or retrieve. (W-3) Comparable capability:
+      the same base model family and parameter scale initially, so neither
+      hemisphere dominates by capability (which would make divergence mean
+      "the stronger one is usually right") and so each can read the other's
+      reasoning reports and express payloads in comparable form for spec 7.2
+      equivalence. (W-4) Differing disposition, modelled on mode of attention
+      rather than task domain. HEM-A, the focused stance: reasons inside the
+      current model of the world - consistency with memory, standing goals and
+      known procedure; precise; exploitation-oriented. HEM-B, the broad
+      stance: context-wide, sensitive to novelty and anomaly, asks what the
+      focused view leaves out, willing to reframe. Implementation staged by
+      cost: v1 distinct reasoning framing and sampling configuration on the
+      same base model; v2 separate adapters or fine-tunes (PHASE-3
+      "independently configurable"); v3 distinct model families as an upgrade
+      path once the governance layer and comparison are proven. (W-5) The
+      stance split is a hypothesis to be evaluated, not a settled fact. It
+      follows OPEN-002 ("evaluate task performance before fixing
+      specialization") and is tested under RUB-010 benchmarks: does divergence
+      between stances surface errors a single stance misses? A divergence rate
+      near zero or near one means the split is carrying no information and
+      must be revisited.
+    inspiration_note: >-
+      The brain analogy is a design heuristic, not an empirical claim.
+      Hemispheric differences are described here as differences in mode of
+      attention and relation to the already-known rather than as a split of
+      functions, and the callosal role is treated as independence-preserving
+      rather than merging. Per ENT-006, architectural unity is not equated
+      with subjective consciousness, and no biological fidelity is claimed.
+
+  - id: D3
+    name: Deliberation is unbounded by count; visibility is proportional and policy-driven
+    statement: >-
+      Resolves PHASE4-SPEC-001 OQ-1. No global or fixed deliberation round
+      limit exists, in code or in policy. Material divergence keeps exactly
+      the exits spec 7.3 gives it (convergent new records, or operator
+      resolution). Proportionality is expressed as policy data instead: each
+      action type in the action policy (spec 9.1) may carry a
+      deliberation_policy that names a SURFACING threshold - when an open,
+      divergent decision is placed in front of the operator. Surfacing never
+      terminates a deliberation, decides anything, or changes decision state.
+      This matches roadmap mode_selection ("low-risk tasks should not incur
+      unnecessary coordination overhead; high-risk tasks should receive
+      proportionate scrutiny") and "escalate unresolved high-impact
+      disagreements when needed". Rules: (L-1) CC-side surfacing thresholds
+      are deterministic counters (for example, deliberation attempts); spec
+      section 0 forbids wall-clock time as a decision input, so age-based
+      "stale" flagging belongs to the operator digest's presentation of record
+      timestamps, not to a CC state transition. (L-2) An action type with no
+      deliberation_policy surfaces on first divergence - missing information
+      resolves to the most visible behavior, consistent with the fail-closed
+      matrix. (L-3) Surfacing is an audit event; spec 11.3's closed event set
+      needs one new kind (for example deliberation_surfaced). (L-4) What
+      starts a new round is event-driven: new InterpretationRecords from the
+      hemispheres, or an operator resolution. The CC neither polls nor re-runs
+      deliberation on a timer. Interim until Phase 5 designs coordination.
+
+alternatives:
+  - id: ALT-A
+    name: Single-node sequential execution as the only target (roadmap 1.1.0 as written)
+    assessment: >-
+      Rejected as the sole target; retained as the degraded mode. The operator
+      intends a multi-machine arrangement, and sequential time-slicing cannot
+      provide concurrent, genuinely independent hemispheres.
+  - id: ALT-B
+    name: Fixed role-to-machine binding (for example HEM-A always on one named machine)
+    assessment: >-
+      Rejected. It couples governance and architecture to a deployment, and
+      contradicts the operator's stated aim of fluid compute.
+  - id: ALT-C
+    name: Placement as configuration; disposition-based hemispheres; policy-driven deliberation visibility
+    assessment: Chosen. See decision_parts D1 to D3.
+  - id: ALT-D
+    name: Hemispheres differentiated by domain specialization (for example one for language, one for planning)
+    assessment: >-
+      Rejected for v1. It produces division of labour, not cognitive
+      plurality (INV-002): the two components rarely examine the same question,
+      so there is little disagreement to preserve. OPEN-002 also requires
+      evidence before fixing specialization.
+  - id: ALT-E
+    name: Fully distinct model families from the outset
+    assessment: >-
+      Deferred, not rejected. Strongest independence, but costly on this
+      hardware and harder to keep comparable for spec 7.2. Retained as the v3
+      upgrade path in D2.
+  - id: ALT-F
+    name: A fixed deliberation round cap with automatic escalation
+    assessment: >-
+      Rejected by the operator. A single number cannot suit tasks of differing
+      consequence, and under an adversarial design divergence is an intended
+      state, not an exception.
+  - id: ALT-G
+    name: No limit and no surfacing (OQ-1 interim, kept indefinitely)
+    assessment: >-
+      Rejected. Divergence that nobody is shown can sit unresolved
+      indefinitely and silently, which is the failure surfacing exists to
+      prevent.
+
+chosen_option:
+  id: ALT-C
+  summary: >-
+    Placement is configuration with a component-addressed boundary;
+    hemispheres are same-family, same-information, differing in disposition,
+    evaluated as a hypothesis; deliberation has no round cap, and
+    proportionality lives in per-action-type surfacing policy.
+
+rationale:
+  - >-
+    The Phase 4 boundary was designed so that nothing in governance changes
+    when hemispheres move to separate machines (spec 5.1). Placing components
+    by id rather than by host keeps that property and makes the operator's
+    "fluid compute" a configuration matter.
+  - >-
+    Separating the CC and integrity store from inference nodes strengthens
+    ADR-001 at low cost: the deterministic CC needs little compute, and
+    hemisphere nodes gain no write path to the machinery that makes the free
+    tier reversible.
+  - >-
+    A disposition difference over identical information is the only kind of
+    divergence that is evidence of anything. Differing access would manufacture
+    disagreement from plumbing; differing capability would reduce it to a
+    ranking.
+  - >-
+    The roadmap's modes already name the adversarial and collaborative halves
+    of the operator's design (MODE-002, MODE-001). Phase 4 supplies the
+    substrate; this ADR keeps that substrate from presuming rare divergence.
+  - >-
+    A surfacing threshold separates "stop trying to converge" from "a human
+    should notice this is stuck", which a round cap conflates. Keeping it in
+    the existing action policy keeps it inspectable, versioned data
+    (consistent with ADR-001's authority-registry rule and spec D-06's
+    prohibition on thresholds buried in code).
+
+affected_invariants:
+  - id: INV-002
+    effect: >-
+      Reinforced. Disposition over identical information preserves
+      independent reasoning and distinct learning histories without
+      manufacturing disagreement from access differences.
+  - id: INV-007
+    effect: >-
+      Unchanged in text. A cluster adds a network trust boundary: placement
+      changes to the integrity machinery stay gated_integrity (T-3), and
+      node-to-node transport must be authenticated and integrity-protected
+      before any hemisphere or executor is placed on a second node. See
+      known_tradeoffs on ADR-001's premise.
+  - id: INV-003
+    effect: >-
+      Supported. A physically separate integrity and memory node strengthens
+      developmental integrity; the snapshot reference in W-2 makes each
+      interpretation reproducible against the state it was made from.
+  - id: INV-004
+    effect: Supported. Per-action-type deliberation policy keeps self-governance proportionate rather than uniformly gated.
+
+known_tradeoffs:
+  - >-
+    ADR-001's rationale relies partly on "no default network exposure"
+    bounding catastrophic scenarios. A cluster removes that premise for
+    node-to-node traffic. This ADR does not weaken ADR-001 but does touch one
+    of its stated premises, so review is required when the first multi-node
+    transport is implemented: private network segment, mutual authentication,
+    integrity-protected messages, and no exposure outside the fleet.
+  - >-
+    Same-family hemispheres have correlated blind spots, which limits what
+    adversarial pressure between them can reveal. The v3 cross-family upgrade
+    path and the RUB-010 divergence benchmarks are the mitigations; the first
+    is deferred and the second is not yet built.
+  - >-
+    The fleet is modest CPU-only hardware with unconfirmed RAM on the Ruby R3.
+    Concurrent hemispheres may be too slow to be useful until OPEN-001
+    benchmarks are run on the real machines; nothing in this ADR has been
+    measured. Every conformance score to date was obtained under QEMU or in a
+    sandbox, and RUB-009 (resource fitness) remains unverified on hardware.
+  - >-
+    Unbounded deliberation can consume compute indefinitely on divergent
+    tasks. Surfacing makes this visible but does not cap it; any cap on
+    consumption is a Phase 7 resource-budget matter (SVC-006), not a
+    deliberation rule.
+  - >-
+    Whether the focused/broad stance split yields informative divergence is
+    unproven (W-5). It may need revision or replacement after evaluation.
+
+open_questions:
+  - id: ADR002-OQ-A
+    question: Which placement (P1, P2, P3, or another) fits the real fleet?
+    resolution: OPEN-001 benchmarks on the actual machines; confirm Ruby R3 RAM first.
+  - id: ADR002-OQ-B
+    question: >-
+      Where do executors live, and how are action targets scoped to a node?
+      ActionPayload.target is a bare string and the policy's integrity_targets
+      are node-local paths; in a cluster an action must name which node it
+      acts on, and each node's executor must be reachable only through the CC.
+    resolution: Phase 4 addendum before execution is wired across nodes.
+  - id: ADR002-OQ-C
+    question: >-
+      What prompts hemispheres to produce new interpretation rounds when
+      divergence is open (L-4 fixes the CC side only)?
+    resolution: Phase 5 coordination design (MODE-002, MODE-003).
+  - id: ADR002-OQ-D
+    question: >-
+      How is an adversarial objection represented? Under spec 7.3 a null
+      payload opposite a proposed action is treated as insufficient
+      information and the decision is DEFERRED (awaiting_second_proposal). An
+      adversarial hemisphere that deliberately declines to propose, because it
+      is challenging the proposal, is objecting, not failing to propose. The
+      spec has an objection decision kind and an objection_recorded audit
+      event but does not say how an objection enters deliberation or
+      affects state.
+    resolution: Phase 4 addendum, before the Phase 5 opposition mode is built.
+  - id: ADR002-OQ-E
+    question: >-
+      Where does the W-2 memory snapshot reference live? The roadmap's
+      interpretation_record and the Phase-0 reasoning_report both require
+      relevant_context (and list ambiguity), but PHASE4-SPEC-001 section 4.2
+      omits both fields and records no deviation, although the spec states
+      that the roadmap wins and disagreements are recorded as deviations.
+      relevant_context is the natural carrier for the snapshot reference.
+    resolution: >-
+      Reconcile spec 4.2 with the roadmap and the Phase-0 contract (restore
+      the fields or record the deviation) in the Phase 4 addendum. InterpretationRecord
+      is a closed field set, so this is a schema change and needs a
+      schema_version decision under spec 5.4 / A8.
+
+consequences_on_acceptance:
+  - roadmap neurai-roadmap-1.2.0.yaml created (1.1.0 preserved); hardware_updates and the execution-model statement revised; accepted_decisions gains ADR-002.
+  - roadmap/deployment-host.md gains a topology section referencing this ADR; its fleet table stays provisional until OPEN-001.
+  - PHASE4-SPEC-001 addendum (v1.1.0) covering the OQ-1 resolution, deliberation_policy in the action policy, the new audit event kind, ADR002-OQ-B, OQ-D and OQ-E.
+  - architecture/records/decisions.yaml index entry (added with this draft, status proposed).
+  - Phase 3 hemisphere-adapter design starts from D2.
+
+review_trigger: >-
+  Revisit at the first of: (a) OPEN-001 benchmark results on the real fleet
+  that make a candidate placement infeasible; (b) the first multi-node
+  transport implementation (ADR-001 premise review); (c) evidence that
+  hemisphere divergence is uninformative, or occurs almost always or almost
+  never; (d) the Phase 5 coordination design; or (e) the next full
+  conformance evaluation.
