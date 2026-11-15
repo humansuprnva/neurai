@@ -5,6 +5,7 @@ on:
     branches:
       - architecture/phase4-action-routing-interpretation-schema
   pull_request:
+    types: [opened, synchronize, reopened, edited]
     branches:
       - main
 
