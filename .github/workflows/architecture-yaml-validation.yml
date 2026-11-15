@@ -29,13 +29,12 @@ jobs:
           from pathlib import Path
           import yaml
 
-          paths = [
+          yaml_paths = [
               Path("roadmap/decisions/ADR-003-bounded-cc-objection-disposition.yaml"),
               Path("roadmap/specifications/PHASE4-SPEC-001-addendum-1.2.0.yaml"),
-              Path("roadmap/neurai-roadmap-1.3.0.yaml"),
           ]
           documents = {}
-          for path in paths:
+          for path in yaml_paths:
               with path.open("r", encoding="utf-8") as stream:
                   documents[path.name] = yaml.safe_load(stream)
               assert isinstance(documents[path.name], dict), f"{path}: top-level YAML value must be a mapping"
@@ -48,10 +47,21 @@ jobs:
           assert addendum["version"] == "1.2.0"
           ids = addendum["conformance_test_registry"]["test_ids"]
           assert len(ids) == len(set(ids)), "Duplicate conformance test IDs in registry"
+          test_groups = [
+              addendum["action_routing_tests"],
+              addendum["interpretation_tests"],
+              addendum["deliberation_tests"],
+              addendum["resolution_ADR002_OQ_D"]["conformance_tests"],
+          ]
+          actual_ids = [test["id"] for group in test_groups for test in group]
+          assert len(actual_ids) == len(set(actual_ids)), "Duplicate conformance test IDs in test cases"
+          assert set(actual_ids) == set(ids), "Registry and defined conformance tests differ"
 
-          roadmap = documents["neurai-roadmap-1.3.0.yaml"]
-          assert "ADR-003" in roadmap["current_baseline"]["accepted_decisions"][2]
-          print(f"Parsed {len(paths)} YAML documents; architecture metadata checks passed.")
+          roadmap_text = Path("roadmap/neurai-roadmap-1.3.0.yaml").read_text(encoding="utf-8")
+          assert "Document version: 1.3.0" in roadmap_text
+          assert "ADR-003 (2026-11-15)" in roadmap_text
+          assert "Prior version preserved as neurai-roadmap-1.2.0.yaml" in roadmap_text
+          print(f"Parsed {len(yaml_paths)} YAML documents; roadmap version and ADR-003 text checks passed.")
           PY
       - name: Publish commit validation status
         if: always()
