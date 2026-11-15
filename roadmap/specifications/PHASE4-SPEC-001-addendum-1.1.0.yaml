@@ -1,0 +1,268 @@
+# NeurAI Phase 4 Contract Addendum
+# Addendum version: 1.1.0
+# Applies to: PHASE4-SPEC-001 v1.0.0
+# Governing contract: roadmap/neurai-roadmap-1.2.0.yaml
+# Related decision: ADR-002 (accepted 2026-11-13)
+# Status: Proposed contract resolution; implementation not yet present.
+#
+# This addendum resolves ADR002-OQ-B and ADR002-OQ-E. It does not claim
+# that runtime routing, distributed transport, or interpretation storage
+# has been implemented.
+
+addendum:
+  id: PHASE4-SPEC-001-ADDENDUM-1.1.0
+  version: "1.1.0"
+  status: proposed_for_operator_review
+  scope:
+    - action_target_identity_and_node_routing
+    - interpretation_record_schema_reconciliation
+  governing_rules:
+    - Component identity is independent of deployment host.
+    - The Corpus Callosum is the sole authority-mediated route to executors.
+    - The roadmap's interpretation_record required_fields are authoritative.
+    - Missing or ambiguous routing information fails closed.
+    - Schema changes are explicit, versioned, and auditable.
+
+  resolution_ADR002_OQ_B:
+    title: Logical action targets and explicit execution-node routing
+    decision: >
+      ActionPayload must distinguish the initiator, the logical target,
+      and the execution placement. A component ID is never substituted
+      with a hostname, IP address, or machine-specific address. Node-local
+      resources must identify their owning node explicitly. The CC resolves
+      component placement and authorizes dispatch; hemispheres cannot call
+      node executors directly.
+    action_payload_schema:
+      schema_version: "1.1.0"
+      required:
+        - request_id
+        - actor_component_id
+        - target
+        - operation
+        - parameters
+        - execution
+      properties:
+        request_id:
+          type: string
+          description: Unique immutable identifier for this action request.
+        actor_component_id:
+          type: string
+          enum: [HEM-A, HEM-B, CC, EXECUTOR]
+          description: Component that originated the request.
+        target:
+          one_of:
+            - type: component
+              component_id: string
+              description: Logical component target; placement is resolved by CC.
+            - type: node_resource
+              node_id: string
+              resource_type: string
+              resource_id: string
+              description: Resource owned by a specific registered node.
+            - type: shared_resource
+              service_id: string
+              resource_id: string
+              description: Logical shared service/resource; placement is resolved by CC.
+        operation:
+          type: string
+        parameters:
+          type: object
+        constraints:
+          type: object
+          required: false
+          description: Declared scope, limits, and preconditions for the operation.
+        execution:
+          type: object
+          required:
+            - executor_component_id
+          properties:
+            executor_component_id:
+              type: string
+              const: EXECUTOR
+            requested_node_id:
+              type: string
+              required: false
+              description: >
+                Optional placement constraint. If omitted, CC resolves a
+                permitted executor placement. It does not override target
+                ownership or authority policy.
+            resolved_node_id:
+              type: string
+              description: >
+                CC-populated dispatch destination. Must not be supplied as
+                authoritative routing by a hemisphere.
+    routing_invariants:
+      - Every node_id resolves through the CC-controlled node registry.
+      - A node_resource target must name its owning node_id.
+      - A component target is addressed by component_id; its host is resolved at dispatch.
+      - A shared_resource target is addressed by service_id/resource_id; its host is resolved at dispatch.
+      - The executor must be authorized for the operation and target scope on the resolved node.
+      - The CC validates actor, target, operation, constraints, authority, and node placement before dispatch.
+      - No hemisphere has a direct network or local-process route to an executor that bypasses the CC.
+      - A missing, unknown, stale, or conflicting node mapping is rejected or deferred; it is never guessed.
+      - Re-hosting a hemisphere changes placement configuration, not action identity.
+      - Re-hosting CC, audit, or backup integrity machinery remains gated_integrity under ADR-001/ADR-002.
+      - The resolved node and the registry/configuration version used for resolution are written to the audit record.
+    legacy_payload_migration:
+      rule: >
+        A legacy bare-string target is not sufficient to authorize a
+        multi-node action. It may be migrated only when an explicit,
+        reviewed mapping unambiguously identifies its target kind and
+        ownership. Otherwise it is marked unresolved and cannot be dispatched.
+      preserve_original: true
+      audit_migration: true
+
+  resolution_ADR002_OQ_E:
+    title: Restore omitted interpretation fields and version the closed schema
+    decision: >
+      Restore relevant_context and ambiguity to InterpretationRecord.
+      Their omission from PHASE4-SPEC-001 v1.0.0 is a specification defect,
+      not an accepted architectural deviation. The record is schema-versioned
+      so readers can distinguish the earlier incomplete contract from the
+      corrected contract.
+    interpretation_record_schema:
+      schema_version: "1.1.0"
+      closed_field_set: true
+      required_fields:
+        - original_input_reference
+        - perceived_intent
+        - relevant_context
+        - assumptions
+        - ambiguity
+        - confidence
+        - supporting_evidence
+        - alternatives
+        - unresolved_questions
+      fields:
+        original_input_reference:
+          type: string
+          description: Stable reference to the original input; do not replace it with a paraphrase.
+        perceived_intent:
+          type: string
+        relevant_context:
+          type: object
+          required:
+            - memory_snapshot_reference
+          properties:
+            memory_snapshot_reference:
+              type: string
+              description: Immutable identifier/hash for the shared-memory snapshot used by this interpretation.
+            context_references:
+              type: array
+              items: string
+            task_context_reference:
+              type: string
+              required: false
+          description: >
+            Context available to the component at interpretation time.
+            Both hemispheres must receive the same original input and the
+            same referenced memory snapshot for a given task.
+        assumptions:
+          type: array
+          items: string
+        ambiguity:
+          type: array
+          items:
+            type: object
+            required: [issue, impact]
+            properties:
+              issue: string
+              impact: string
+              possible_readings:
+                type: array
+                items: string
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        supporting_evidence:
+          type: array
+          items: string
+        alternatives:
+          type: array
+          items: string
+        unresolved_questions:
+          type: array
+          items: string
+    schema_migration:
+      from_version: "1.0.0"
+      to_version: "1.1.0"
+      preserve_original_records: true
+      do_not_invent_missing_context: true
+      migration_rules:
+        - Existing records retain their original schema_version.
+        - Records missing relevant_context or ambiguity are not silently backfilled with fabricated values.
+        - A migrated view may represent unavailable fields as explicitly unknown, while preserving the source record unchanged.
+        - New records must satisfy the 1.1.0 closed schema.
+        - Memory snapshot references must identify immutable snapshots, not a mutable "latest" pointer.
+      deviation_record:
+        classification: specification_defect_corrected
+        accepted_architectural_deviation: false
+        explanation: >
+          The roadmap already requires both fields. The Phase 4 omission
+          contradicted the governing contract and is corrected here.
+    provenance_requirements:
+      - Record producing_component_id (HEM-A or HEM-B) alongside the interpretation record envelope.
+      - Record creation timestamp in the event/audit envelope; do not use wall-clock time as a CC deliberation decision input.
+      - Preserve the exact schema_version used to validate each record.
+      - Preserve the memory_snapshot_reference used to produce each interpretation.
+      - Reject records with unknown schema versions unless an explicit compatible reader is registered.
+
+  conformance_tests:
+    action_routing:
+      - id: ACT-ROUTE-001
+        test: A node_resource action without target.node_id is rejected.
+      - id: ACT-ROUTE-002
+        test: An unknown node_id is rejected or deferred; no fallback host is guessed.
+      - id: ACT-ROUTE-003
+        test: A component target is resolved from component_id through the CC registry, not from a hard-coded host.
+      - id: ACT-ROUTE-004
+        test: A hemisphere cannot dispatch directly to an executor.
+      - id: ACT-ROUTE-005
+        test: The audit record captures actor, logical target, resolved node, executor, and registry version.
+      - id: ACT-ROUTE-006
+        test: A legacy bare-string target cannot be dispatched in a multi-node context without an explicit migration mapping.
+    interpretation_records:
+      - id: INT-REC-001
+        test: A valid 1.1.0 record includes relevant_context and ambiguity.
+      - id: INT-REC-002
+        test: A record missing either restored field fails validation.
+      - id: INT-REC-003
+        test: Both hemispheres' records for one task reference the identical input and memory snapshot.
+      - id: INT-REC-004
+        test: A 1.0.0 record remains readable without fabricating omitted information.
+      - id: INT-REC-005
+        test: Every stored record retains its schema_version and provenance references.
+
+  implementation_boundary:
+    included_in_this_addendum:
+      - normative_contract_resolution
+      - schema_definitions
+      - migration_rules
+      - conformance_test_requirements
+    not_claimed_as_implemented:
+      - runtime_node_registry
+      - authenticated_node_transport
+      - executor_service
+      - CC_dispatch_enforcement
+      - SQLite_interpretation_record_storage
+      - automated_schema_migration
+    prerequisites_before_multi_node_execution:
+      - private_network_segment
+      - mutual_authentication
+      - integrity_protected_transport
+      - CC_only_executor_dispatch
+      - node_registry_and_placement_validation
+      - audit_and_recovery_tests
+
+  traceability:
+    roadmap:
+      - "roadmap/neurai-roadmap-1.2.0.yaml §4 interpretation_record"
+      - "roadmap/neurai-roadmap-1.2.0.yaml §5 memory/provenance"
+      - "roadmap/neurai-roadmap-1.2.0.yaml INV-003"
+      - "roadmap/neurai-roadmap-1.2.0.yaml INV-007"
+    decisions:
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml D1"
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml OQ-B"
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml OQ-E"
+      - "roadmap/decisions/ADR-001-capability-first-authority.yaml"
