@@ -148,9 +148,41 @@ addendum:
         - confidence
         - alternatives_considered
         - alternatives
-      optional_fields:
         - unresolved_questions
+      optional_fields: []
       field_contract:
+        record_id:
+          type: string
+          format: "<kind>-<uuid4hex>"
+        schema:
+          type: string
+          const: neurai.cc/interpretation-record
+        schema_version:
+          type: string
+          const: "1.1.0"
+        created_at:
+          type: string
+          format: date-time
+          timezone: UTC
+          decision_use: evidence_only
+        provenance:
+          type: object
+          required: [origin, origin_component, derived_from]
+          properties:
+            origin:
+              type: string
+              enum: [hemisphere_original, cc_derived, executor_report, operator_record]
+            origin_component:
+              type: string
+              enum: [HEM-A, HEM-B, CC, EXECUTOR, OPERATOR]
+            derived_from:
+              type: array
+              items:
+                type: object
+                required: [record_id, record_hash]
+                properties:
+                  record_id: string
+                  record_hash: string
         hemisphere_id:
           type: string
           enum: [HEM-A, HEM-B]
@@ -217,7 +249,8 @@ addendum:
         unresolved_questions:
           type: array
           items: string
-          required: false
+          required: true
+          description: May be empty, but must be present on every new 1.1.0 record.
       evidence_ref_contract:
         required:
           - pointer
@@ -554,6 +587,7 @@ addendum:
       - ADD12-INT-002
       - ADD12-INT-003
       - ADD12-INT-004
+      - ADD12-INT-005
       - ADD12-DELIB-001
       - ADD12-DELIB-002
       - ADD12-DELIB-003
@@ -589,6 +623,8 @@ addendum:
         test: Both hemispheres use identical original input and memory snapshot references.
       - id: ADD12-INT-004
         test: Migration preserves immutable originals and never fabricates missing context.
+      - id: ADD12-INT-005
+        test: unresolved_questions is required but may be an empty list on a new record.
     deliberation_tests:
       - id: ADD12-DELIB-001
         test: No global or fixed deliberation round limit is enforced.
