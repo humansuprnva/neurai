@@ -1,6 +1,6 @@
 # Record schema: change record (roadmap Section 12)
 record_type: change_record
-source: roadmap/neurai-roadmap-1.1.0.yaml, Section 12 (records.change_record)
+source: roadmap/neurai-roadmap-1.2.0.yaml, Section 12 (records.change_record)
 storage: records/changes.yaml (append-only list)
 fields:
   change_id: {type: string, required: true}

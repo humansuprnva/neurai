@@ -4,7 +4,7 @@
 # identifiers, verbatim rule text, and — per invariant — how conformance
 # is checked and in which phase enforcement lands. The roadmap is the
 # authority; rule text here is copied verbatim from
-# roadmap/neurai-roadmap-1.1.0.yaml and cross-checked against it by the
+# roadmap/neurai-roadmap-1.2.0.yaml and cross-checked against it by the
 # test harness.
 #
 # check_method values:
@@ -23,7 +23,7 @@
 registry:
   id: neurai-invariant-registry
   version: "0.1.0"
-  source: roadmap/neurai-roadmap-1.1.0.yaml, Section 1 (foundational_invariants)
+  source: roadmap/neurai-roadmap-1.2.0.yaml, Section 1 (foundational_invariants)
   count: 12
 
 invariants:

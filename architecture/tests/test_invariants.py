@@ -20,7 +20,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCH = ROOT / "architecture"
-ROADMAP_TEXT = (ROOT / "roadmap" / "neurai-roadmap-1.1.0.yaml").read_text(encoding="utf-8")
+ROADMAP_TEXT = (ROOT / "roadmap" / "neurai-roadmap-1.2.0.yaml").read_text(encoding="utf-8")
 CORE = (ROOT / "neurai" / "neurai.py").read_text(encoding="utf-8")
 
 failures = []

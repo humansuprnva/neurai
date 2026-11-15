@@ -14,7 +14,7 @@
 tracker:
   id: neurai-requirements
   version: "0.1.0"
-  source: roadmap/neurai-roadmap-1.1.0.yaml
+  source: roadmap/neurai-roadmap-1.2.0.yaml
   baseline_evaluation: EVAL-2026-11-02-001
 
 requirements:

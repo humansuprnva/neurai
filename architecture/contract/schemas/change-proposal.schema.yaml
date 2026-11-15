@@ -1,6 +1,6 @@
 # Record schema: change proposal (roadmap Section 8, proposal_schema)
 record_type: change_proposal
-source: roadmap/neurai-roadmap-1.1.0.yaml, Section 8 (change_governance.proposal_schema)
+source: roadmap/neurai-roadmap-1.2.0.yaml, Section 8 (change_governance.proposal_schema)
 lifecycle: [propose, classify, assess_impact, preserve_current_state, validate_dependencies, test_in_isolation, conduct_independent_review, evaluate_against_invariants, authorize, commit_atomically_where_feasible, verify_post_commit, record_outcome, rollback_if_required]
 change_classes: [CHG-001, CHG-002, CHG-003, CHG-004, CHG-005, CHG-006, CHG-007]
 fields:

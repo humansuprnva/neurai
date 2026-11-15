@@ -2,18 +2,20 @@
 # Format: roadmap Section 12 (architecture_decision required fields),
 # extended with the decision's operative detail, following ADR-001.
 #
-# STATUS: PROPOSED. Drafted from operator direction given in conversation on
-# 2026-11-12; not yet reviewed or accepted. Nothing in this record changes the
-# roadmap, the Phase 4 specification, or any code until it is accepted.
+# STATUS: ACCEPTED 2026-11-13 by the operator, as written. Drafted from
+# operator direction given in conversation on 2026-11-12. Acceptance produced
+# roadmap 1.2.0; the PHASE4-SPEC-001 addendum and deployment-host.md topology
+# section follow (see consequences_on_acceptance).
 
 decision_id: ADR-002
 date: 2026-11-12
 title: Cluster topology, hemisphere disposition model, and proportional deliberation policy
-status: proposed
-decided_by: pending — operator direction recorded below; formal acceptance by Levi Nord outstanding
+status: accepted
+accepted_date: 2026-11-13
+decided_by: Levi Nord (operator), accepted as written
 drafted_by: Claude
 amends: >-
-  Nothing yet. On acceptance: neurai-roadmap-1.1.0.yaml -> 1.2.0
+  neurai-roadmap-1.1.0.yaml -> 1.2.0 (done)
   (hardware_updates, "sequential model execution stands"), PHASE4-SPEC-001
   v1.0.0 -> v1.1.0 addendum (OQ-1 resolution and the follow-ups listed under
   consequences), and roadmap/deployment-host.md (topology section). Prior
