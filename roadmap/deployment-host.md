@@ -203,3 +203,40 @@ The fixed two-image install is superseded by a **universal installer**
   fleet proposal. The old two-image artifacts stay in `dist/` and
   on Drive as recovery media; `INSTALL-DISK.md` remains accurate
   for them.
+
+## Topology — ADR-002 (accepted 2026-11-13)
+
+The fleet above is the intended deployment, not just a future expansion.
+`roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml`
+fixes the principles; **concrete placement is not decided** and waits on
+OPEN-001 benchmarks on the real machines.
+
+- **Placement is configuration.** Components (HEM-A, HEM-B, CC, EXECUTOR)
+  are addressed by id, never by host. Every exchange crosses the Phase 4
+  serialization boundary, so one machine, one machine time-sliced, and a
+  cluster are the same design. Sequential single-node execution is the
+  **degraded mode**, not the target.
+- **CC and integrity machinery are co-located and separate from inference
+  nodes.** The CC is deterministic and model-free, so it needs little
+  compute; hemisphere nodes get no write path to the audit and backup
+  stores. This is the network-level counterpart of the integrity partition
+  above. Re-hosting a hemisphere is a free-tier configuration change;
+  re-hosting the CC, audit store, or backup store is `gated_integrity`.
+- **Candidate placements to benchmark** (provisional, none measured):
+  - **P1** — HEM-A on the Ruby R3, HEM-B on the Lenovo, CC / integrity /
+    memory on the NUC6.
+  - **P2** — both hemispheres time-sliced on the Ruby R3, CC on the NUC6
+    (the degraded mode).
+  - **P3** — HEM-B on the NUC6, CC on the Lenovo.
+  The provisional role table above is consistent with P1 and P2.
+
+Gaps before any of this is real:
+- Runtime distribution does not exist yet; roles are install-time seeds.
+- ADR-001's safety case leaned on "no default network exposure". Before the
+  first multi-node transport, node-to-node traffic needs a private network
+  segment, mutual authentication, integrity-protected messages, and no
+  exposure outside the fleet (ADR-001 premise review, per ADR-002).
+- Ruby R3 RAM is still unconfirmed (8 or 16 GB), and no inference benchmark
+  has been run on any fleet machine.
+- Action targets need node scoping and executor placement needs a decision
+  (ADR002-OQ-B).

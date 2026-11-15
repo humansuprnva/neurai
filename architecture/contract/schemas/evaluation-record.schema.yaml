@@ -1,6 +1,6 @@
 # Record schema: evaluation record (roadmap Section 12)
 record_type: evaluation_record
-source: roadmap/neurai-roadmap-1.1.0.yaml, Section 12 (records.evaluation_record) and Section 11 (rubric)
+source: roadmap/neurai-roadmap-1.2.0.yaml, Section 12 (records.evaluation_record) and Section 11 (rubric)
 storage: >-
   Full evaluation records live in roadmap/ as individual files (see
   evaluation-v2.0.0.yaml). records/evaluations.yaml indexes them and

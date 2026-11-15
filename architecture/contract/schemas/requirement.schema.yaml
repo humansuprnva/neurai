@@ -1,6 +1,6 @@
 # Record schema: requirement (roadmap Section 12)
 record_type: requirement
-source: roadmap/neurai-roadmap-1.1.0.yaml, Section 12 (records.requirement)
+source: roadmap/neurai-roadmap-1.2.0.yaml, Section 12 (records.requirement)
 fields:
   id: {type: string, required: true, pattern: "^[A-Z]+-[A-Z0-9-]+$"}
   statement: {type: string, required: true}

@@ -4,7 +4,7 @@
 # Phase-0 test harness (../tests/) can verify identifiers, boundaries, and
 # record formats automatically. It adds no new requirements.
 #
-# AUTHORITY: roadmap/neurai-roadmap-1.1.0.yaml governs. On any conflict,
+# AUTHORITY: roadmap/neurai-roadmap-1.2.0.yaml governs. On any conflict,
 # the roadmap wins and this file is the defect. Amended by ADR-001
 # (roadmap/decisions/ADR-001-capability-first-authority.yaml).
 
@@ -14,7 +14,7 @@ contract:
   phase: PHASE-0
   status: scaffolding (defined, not yet enforced at runtime)
   source_documents:
-    roadmap: roadmap/neurai-roadmap-1.1.0.yaml
+    roadmap: roadmap/neurai-roadmap-1.2.0.yaml
     roadmap_version: "1.1.0"
     rubric_version: "1.0.0"
     decisions:

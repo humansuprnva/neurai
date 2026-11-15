@@ -1,6 +1,6 @@
 # Record schema: architecture decision (roadmap Section 12)
 record_type: architecture_decision
-source: roadmap/neurai-roadmap-1.1.0.yaml, Section 12 (records.architecture_decision)
+source: roadmap/neurai-roadmap-1.2.0.yaml, Section 12 (records.architecture_decision)
 storage: >-
   Full decision records live in roadmap/decisions/ as individual files
   (see ADR-001). records/decisions.yaml indexes them and carries these

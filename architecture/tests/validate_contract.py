@@ -17,7 +17,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]          # neurai-os/
 ARCH = ROOT / "architecture"
-ROADMAP = ROOT / "roadmap" / "neurai-roadmap-1.1.0.yaml"
+ROADMAP = ROOT / "roadmap" / "neurai-roadmap-1.2.0.yaml"
 
 failures = []
 

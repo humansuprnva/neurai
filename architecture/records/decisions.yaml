@@ -59,8 +59,8 @@ decisions:
   - decision_id: ADR-002
     date: "2026-11-12"
     title: Cluster topology, hemisphere disposition model, and proportional deliberation policy
-    status: proposed
-    decided_by: "pending — operator direction recorded 2026-11-12; acceptance by Levi Nord outstanding"
+    status: accepted
+    decided_by: "Levi Nord (operator), accepted as written 2026-11-13"
     context: >-
       Operator direction of 2026-11-12: the two-hemisphere design is the
       engine of self-improvement (adversarial and collaborative); the
@@ -101,5 +101,5 @@ decisions:
       implementation; (c) evidence that hemisphere divergence is
       uninformative; (d) the Phase 5 coordination design; or (e) the next
       full conformance evaluation.
-    amends: "none yet; on acceptance, roadmap 1.1.0 -> 1.2.0 and a PHASE4-SPEC-001 v1.1.0 addendum"
+    amends: "roadmap/neurai-roadmap-1.1.0.yaml -> 1.2.0 (resource_management note, hardware_updates, accepted_decisions); PHASE4-SPEC-001 v1.1.0 addendum pending"
     record_path: roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml
