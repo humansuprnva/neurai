@@ -1,0 +1,538 @@
+# NeurAI Phase 4 Contract Addendum
+# Addendum version: 1.1.0
+# Applies to: PHASE4-SPEC-001 v1.0.0
+# Governing contract: roadmap/neurai-roadmap-1.2.0.yaml
+# Related decision: ADR-002 (accepted 2026-11-13)
+# Status: Proposed contract resolution; implementation not yet present.
+#
+# This addendum resolves ADR-002 D3 / OQ-1, OQ-B, OQ-D, and OQ-E. It does not
+# claim that runtime routing, distributed transport, deliberation handling,
+# or interpretation storage has been implemented.
+
+addendum:
+  id: PHASE4-SPEC-001-ADDENDUM-1.1.0
+  version: "1.1.0"
+  status: proposed_for_operator_review
+  scope:
+    - proportional_deliberation_and_surfacing_policy
+    - action_target_identity_and_node_routing
+    - adversarial_objection_representation_and_handling
+    - interpretation_record_schema_reconciliation
+  governing_rules:
+    - Component identity is independent of deployment host.
+    - The Corpus Callosum is the sole authority-mediated route to executors.
+    - The roadmap's interpretation_record required_fields are authoritative.
+    - Missing or ambiguous routing information fails closed.
+    - Deliberation has no global or fixed round-count limit.
+    - Surfacing is a visibility event, never a deliberation termination or decision.
+    - Objections are first-class deliberative contributions, not null proposals.
+    - Objection significance and task urgency are assessed proportionally without allowing urgency to waive invariants or authority.
+    - Schema changes are explicit, versioned, and auditable.
+
+  resolution_ADR002_OQ_B:
+    title: Logical action targets and explicit execution-node routing
+    decision: >
+      ActionPayload must distinguish the initiator, the logical target,
+      and the execution placement. A component ID is never substituted
+      with a hostname, IP address, or machine-specific address. Node-local
+      resources must identify their owning node explicitly. The CC resolves
+      component placement and authorizes dispatch; hemispheres cannot call
+      node executors directly.
+    action_payload_schema:
+      schema_version: "1.1.0"
+      required:
+        - request_id
+        - actor_component_id
+        - target
+        - operation
+        - parameters
+        - execution
+      properties:
+        request_id:
+          type: string
+          description: Unique immutable identifier for this action request.
+        actor_component_id:
+          type: string
+          enum: [HEM-A, HEM-B, CC, EXECUTOR]
+          description: Component that originated the request.
+        target:
+          one_of:
+            - type: component
+              component_id: string
+              description: Logical component target; placement is resolved by CC.
+            - type: node_resource
+              node_id: string
+              resource_type: string
+              resource_id: string
+              description: Resource owned by a specific registered node.
+            - type: shared_resource
+              service_id: string
+              resource_id: string
+              description: Logical shared service/resource; placement is resolved by CC.
+        operation:
+          type: string
+        parameters:
+          type: object
+        constraints:
+          type: object
+          required: false
+          description: Declared scope, limits, and preconditions for the operation.
+        execution:
+          type: object
+          required:
+            - executor_component_id
+          properties:
+            executor_component_id:
+              type: string
+              const: EXECUTOR
+            requested_node_id:
+              type: string
+              required: false
+              description: >
+                Optional placement constraint. If omitted, CC resolves a
+                permitted executor placement. It does not override target
+                ownership or authority policy.
+            resolved_node_id:
+              type: string
+              description: >
+                CC-populated dispatch destination. Must not be supplied as
+                authoritative routing by a hemisphere.
+    routing_invariants:
+      - Every node_id resolves through the CC-controlled node registry.
+      - A node_resource target must name its owning node_id.
+      - A component target is addressed by component_id; its host is resolved at dispatch.
+      - A shared_resource target is addressed by service_id/resource_id; its host is resolved at dispatch.
+      - The executor must be authorized for the operation and target scope on the resolved node.
+      - The CC validates actor, target, operation, constraints, authority, and node placement before dispatch.
+      - No hemisphere has a direct network or local-process route to an executor that bypasses the CC.
+      - A missing, unknown, stale, or conflicting node mapping is rejected or deferred; it is never guessed.
+      - Re-hosting a hemisphere changes placement configuration, not action identity.
+      - Re-hosting CC, audit, or backup integrity machinery remains gated_integrity under ADR-001/ADR-002.
+      - The resolved node and the registry/configuration version used for resolution are written to the audit record.
+    legacy_payload_migration:
+      rule: >
+        A legacy bare-string target is not sufficient to authorize a
+        multi-node action. It may be migrated only when an explicit,
+        reviewed mapping unambiguously identifies its target kind and
+        ownership. Otherwise it is marked unresolved and cannot be dispatched.
+      preserve_original: true
+      audit_migration: true
+
+  resolution_ADR002_OQ_E:
+    title: Restore omitted interpretation fields and version the closed schema
+    decision: >
+      Restore relevant_context and ambiguity to InterpretationRecord.
+      Their omission from PHASE4-SPEC-001 v1.0.0 is a specification defect,
+      not an accepted architectural deviation. The record is schema-versioned
+      so readers can distinguish the earlier incomplete contract from the
+      corrected contract.
+    interpretation_record_schema:
+      schema_version: "1.1.0"
+      closed_field_set: true
+      required_fields:
+        - original_input_reference
+        - perceived_intent
+        - relevant_context
+        - assumptions
+        - ambiguity
+        - confidence
+        - supporting_evidence
+        - alternatives
+        - unresolved_questions
+      fields:
+        original_input_reference:
+          type: string
+          description: Stable reference to the original input; do not replace it with a paraphrase.
+        perceived_intent:
+          type: string
+        relevant_context:
+          type: object
+          required:
+            - memory_snapshot_reference
+          properties:
+            memory_snapshot_reference:
+              type: string
+              description: Immutable identifier/hash for the shared-memory snapshot used by this interpretation.
+            context_references:
+              type: array
+              items: string
+            task_context_reference:
+              type: string
+              required: false
+          description: >
+            Context available to the component at interpretation time.
+            Both hemispheres must receive the same original input and the
+            same referenced memory snapshot for a given task.
+        assumptions:
+          type: array
+          items: string
+        ambiguity:
+          type: array
+          items:
+            type: object
+            required: [issue, impact]
+            properties:
+              issue: string
+              impact: string
+              possible_readings:
+                type: array
+                items: string
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        supporting_evidence:
+          type: array
+          items: string
+        alternatives:
+          type: array
+          items: string
+        unresolved_questions:
+          type: array
+          items: string
+    schema_migration:
+      from_version: "1.0.0"
+      to_version: "1.1.0"
+      preserve_original_records: true
+      do_not_invent_missing_context: true
+      migration_rules:
+        - Existing records retain their original schema_version.
+        - Records missing relevant_context or ambiguity are not silently backfilled with fabricated values.
+        - A migrated view may represent unavailable fields as explicitly unknown, while preserving the source record unchanged.
+        - New records must satisfy the 1.1.0 closed schema.
+        - Memory snapshot references must identify immutable snapshots, not a mutable "latest" pointer.
+      deviation_record:
+        classification: specification_defect_corrected
+        accepted_architectural_deviation: false
+        explanation: >
+          The roadmap already requires both fields. The Phase 4 omission
+          contradicted the governing contract and is corrected here.
+    provenance_requirements:
+      - Record producing_component_id (HEM-A or HEM-B) alongside the interpretation record envelope.
+      - Record creation timestamp in the event/audit envelope; do not use wall-clock time as a CC deliberation decision input.
+      - Preserve the exact schema_version used to validate each record.
+      - Preserve the memory_snapshot_reference used to produce each interpretation.
+      - Reject records with unknown schema versions unless an explicit compatible reader is registered.
+
+
+  resolution_ADR002_D3_OQ_1:
+    title: Unbounded deliberation with per-action proportional surfacing policy
+    decision: >-
+      Deliberation has no global or fixed round-count limit in code or policy.
+      Material divergence remains open until new interpretation records change
+      the deliberative state or an authorized operator resolution is received.
+      Each action type may define a deliberation_policy that determines when
+      unresolved divergence or objection is surfaced to the operator. Surfacing
+      changes visibility only: it does not terminate deliberation, decide the
+      proposal, or change its decision state.
+    deliberation_policy:
+      schema:
+        required:
+          - surface_on_first_divergence
+        properties:
+          surface_on_first_divergence:
+            type: boolean
+            description: >-
+              If true, surface any divergent decision immediately. If false,
+              use the configured deterministic attempt thresholds below.
+          surface_after_attempts:
+            type: integer
+            minimum: 1
+            required: false
+            description: >-
+              Number of deliberation attempts after which unresolved divergence
+              is surfaced. This is a visibility threshold, not a round cap.
+          surface_on_material_objection:
+            type: boolean
+            required: false
+            default: true
+          unresolved_objection_policy:
+            type: string
+            enum:
+              - pause
+              - proportional_cc_assessment
+            required: false
+            default: proportional_cc_assessment
+      rules:
+        - An omitted deliberation_policy surfaces on first divergence.
+        - A configured threshold controls operator visibility only.
+        - No threshold may automatically terminate deliberation or force a decision.
+        - Wall-clock age is not a CC decision input; timestamps may be used by operator-facing presentation only.
+        - New rounds are event-driven by new hemisphere InterpretationRecords or an authorized operator resolution; the CC does not poll or rerun deliberation on a timer.
+    audit_event:
+      kind: deliberation_surfaced
+      required_fields:
+        - event_id
+        - decision_id
+        - action_type
+        - surfacing_reason
+        - deliberation_attempt_count
+        - policy_version
+        - timestamp
+      effects:
+        - records that unresolved deliberation was made visible
+        - does not change decision state
+        - does not terminate deliberation
+    conformance_tests:
+      - id: DELIB-001
+        test: No global or fixed deliberation round limit is enforced.
+      - id: DELIB-002
+        test: An omitted deliberation_policy surfaces on first divergence.
+      - id: DELIB-003
+        test: A configured surfacing threshold changes visibility but not decision state or deliberation continuation.
+      - id: DELIB-004
+        test: Wall-clock age does not cause a CC decision-state transition.
+      - id: DELIB-005
+        test: New deliberation rounds begin only on new interpretation records or authorized operator resolution.
+
+  resolution_ADR002_OQ_D:
+    title: First-class adversarial objections with proportional CC disposition
+    decision: >-
+      An objection is an explicit deliberative contribution challenging a
+      specific proposal, interpretation, assumption, or consequence. It is
+      never represented as a null proposal or missing information. The CC
+      validates its structure and authority, preserves it, and determines its
+      procedural effect by applying the relevant action-type policy to the
+      objection's stated significance, evidence, potential harm, action
+      reversibility, task urgency, and consequences of delay. The CC must not
+      collapse these dimensions into an opaque single score. A material,
+      unresolved objection may justify a pause, a response request, or
+      proceeding with safeguards depending on the proportional assessment.
+      Urgency may alter deliberation depth or timing, but cannot waive
+      foundational invariants, permissions, or authority restrictions.
+    objection_record_schema:
+      schema_version: "1.1.0"
+      required_fields:
+        - objection_id
+        - decision_id
+        - objecting_component_id
+        - challenged_proposal_reference
+        - objection_type
+        - grounds
+        - supporting_evidence
+        - potential_consequences
+        - significance_assessment
+        - created_at
+      fields:
+        objection_id:
+          type: string
+          immutable: true
+        decision_id:
+          type: string
+        objecting_component_id:
+          type: string
+          enum: [HEM-A, HEM-B]
+        challenged_proposal_reference:
+          type: string
+          description: Stable reference to the specific proposal or interpretation challenged.
+        objection_type:
+          type: string
+          enum:
+            - factual_error
+            - unsupported_assumption
+            - omitted_context
+            - adverse_consequence
+            - invariant_conflict
+            - authority_conflict
+            - procedural_defect
+            - alternative_interpretation
+            - other
+        grounds:
+          type: string
+        supporting_evidence:
+          type: array
+          items: string
+        potential_consequences:
+          type: array
+          items:
+            type: object
+            required: [description, severity]
+            properties:
+              description: string
+              severity:
+                type: string
+                enum: [negligible, low, moderate, high, critical]
+              likelihood:
+                type: string
+                enum: [unknown, unlikely, plausible, likely, established]
+        significance_assessment:
+          type: object
+          required:
+            - claimed_significance
+            - reversibility
+          properties:
+            claimed_significance:
+              type: string
+              enum: [low, moderate, high, critical]
+            reversibility:
+              type: string
+              enum: [reversible, partially_reversible, difficult_to_reverse, irreversible, unknown]
+            evidence_quality:
+              type: string
+              enum: [limited, moderate, strong, independently_verified, unknown]
+        created_at:
+          type: string
+          format: date-time
+    urgency_assessment:
+      required_fields:
+        - urgency
+        - consequence_of_delay
+        - deadline_basis
+      fields:
+        urgency:
+          type: string
+          enum: [routine, time_sensitive, urgent, emergency]
+        consequence_of_delay:
+          type: string
+        deadline_basis:
+          type: string
+          description: Evidence or task constraint supporting the urgency classification.
+    cc_disposition:
+      allowed_values:
+        - proceed_with_recorded_dissent
+        - proceed_with_safeguards
+        - request_objection_response
+        - pause_for_deliberation
+        - take_safe_interim_action
+        - blocked_by_invariant_or_authority
+      rules:
+        - The CC validates that the objection is well-formed, relevant to the decision, and raised by an authorized component.
+        - The CC evaluates significance and urgency as distinct dimensions, considering evidence quality, plausible harm, reversibility, and the consequences of delay.
+        - The CC uses explicit policy rules; it must not reduce the assessment to an unexplained aggregate score.
+        - A material unresolved objection may cause a procedural pause when delay is safer than proceeding.
+        - When urgency makes delay more harmful, the CC may authorize a least-harmful permissible action with safeguards and recorded dissent.
+        - A safe interim action should be preferred when it reduces immediate risk while preserving the opportunity for further deliberation.
+        - Proceeding over an unresolved objection requires a recorded rationale, accepted risks, safeguards, and any required subsequent review.
+        - An objection does not itself confer veto authority.
+        - An objection identifying a violation of a foundational invariant, permission, or authority boundary must be blocked; urgency cannot override that restriction.
+        - The CC may assess procedural validity and apply deterministic policy, but must not claim semantic certainty about the truth of an objection merely by accepting or rejecting its procedural standing.
+    audit_events:
+      objection_recorded:
+        required_fields:
+          - event_id
+          - objection_id
+          - decision_id
+          - objecting_component_id
+          - challenged_proposal_reference
+          - timestamp
+      objection_disposition_recorded:
+        required_fields:
+          - event_id
+          - objection_id
+          - decision_id
+          - cc_disposition
+          - significance_assessment
+          - urgency_assessment
+          - rationale
+          - policy_version
+          - safeguards
+          - subsequent_review_requirement
+          - timestamp
+      objection_response_recorded:
+        required_fields:
+          - event_id
+          - objection_id
+          - responding_component_id
+          - response_reference
+          - timestamp
+      audit_rules:
+        - Objection records and events are append-only.
+        - A response or disposition never overwrites the original objection.
+        - If execution proceeds while dissent remains unresolved, the audit trail records that fact explicitly.
+        - Audit history preserves proposal, objection, response, disposition, execution outcome, and subsequent review.
+    conformance_tests:
+      - id: OBJ-001
+        test: A deliberate objection is represented as an ObjectionRecord, never as a null proposal or missing information.
+      - id: OBJ-002
+        test: An objection references the specific proposal or interpretation it challenges.
+      - id: OBJ-003
+        test: A material unresolved objection is not silently discarded or treated as non-response.
+      - id: OBJ-004
+        test: Significance and urgency are evaluated as distinct dimensions under explicit policy.
+      - id: OBJ-005
+        test: High significance and low urgency can cause a pause for deliberation.
+      - id: OBJ-006
+        test: High urgency may permit a least-harmful permissible action with safeguards and recorded dissent.
+      - id: OBJ-007
+        test: Urgency cannot override an invariant, permission, or authority restriction.
+      - id: OBJ-008
+        test: Proceeding over unresolved dissent records rationale, accepted risks, safeguards, and review requirements.
+      - id: OBJ-009
+        test: An objection alone does not automatically veto a proposal.
+      - id: OBJ-010
+        test: Objection, response, disposition, and outcome remain separately auditable.
+
+  conformance_tests:
+    deliberation_and_objections:
+      - id: DELIB-001
+        test: No global or fixed deliberation round limit is enforced.
+      - id: DELIB-002
+        test: Surfacing makes unresolved deliberation visible without terminating it or changing decision state.
+      - id: OBJ-001
+        test: A deliberate objection is represented as a first-class record, never as a null proposal.
+      - id: OBJ-002
+        test: Significance and urgency are assessed separately under explicit policy.
+      - id: OBJ-003
+        test: Urgency cannot waive invariants, permissions, or authority restrictions.
+      - id: OBJ-004
+        test: Proceeding over unresolved dissent records rationale, risks, safeguards, and review requirements.
+    action_routing:
+      - id: ACT-ROUTE-001
+        test: A node_resource action without target.node_id is rejected.
+      - id: ACT-ROUTE-002
+        test: An unknown node_id is rejected or deferred; no fallback host is guessed.
+      - id: ACT-ROUTE-003
+        test: A component target is resolved from component_id through the CC registry, not from a hard-coded host.
+      - id: ACT-ROUTE-004
+        test: A hemisphere cannot dispatch directly to an executor.
+      - id: ACT-ROUTE-005
+        test: The audit record captures actor, logical target, resolved node, executor, and registry version.
+      - id: ACT-ROUTE-006
+        test: A legacy bare-string target cannot be dispatched in a multi-node context without an explicit migration mapping.
+    interpretation_records:
+      - id: INT-REC-001
+        test: A valid 1.1.0 record includes relevant_context and ambiguity.
+      - id: INT-REC-002
+        test: A record missing either restored field fails validation.
+      - id: INT-REC-003
+        test: Both hemispheres' records for one task reference the identical input and memory snapshot.
+      - id: INT-REC-004
+        test: A 1.0.0 record remains readable without fabricating omitted information.
+      - id: INT-REC-005
+        test: Every stored record retains its schema_version and provenance references.
+
+  implementation_boundary:
+    included_in_this_addendum:
+      - normative_contract_resolution
+      - schema_definitions
+      - migration_rules
+      - conformance_test_requirements
+    not_claimed_as_implemented:
+      - runtime_node_registry
+      - authenticated_node_transport
+      - executor_service
+      - CC_dispatch_enforcement
+      - SQLite_interpretation_record_storage
+      - automated_schema_migration
+    prerequisites_before_multi_node_execution:
+      - private_network_segment
+      - mutual_authentication
+      - integrity_protected_transport
+      - CC_only_executor_dispatch
+      - node_registry_and_placement_validation
+      - audit_and_recovery_tests
+
+  traceability:
+    roadmap:
+      - "roadmap/neurai-roadmap-1.2.0.yaml §4 interpretation_record"
+      - "roadmap/neurai-roadmap-1.2.0.yaml §5 memory/provenance"
+      - "roadmap/neurai-roadmap-1.2.0.yaml INV-003"
+      - "roadmap/neurai-roadmap-1.2.0.yaml INV-007"
+    decisions:
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml D1"
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml D3"
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml OQ-1"
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml OQ-B"
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml OQ-D"
+      - "roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml OQ-E"
+      - "roadmap/decisions/ADR-001-capability-first-authority.yaml"

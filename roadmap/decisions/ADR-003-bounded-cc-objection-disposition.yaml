@@ -1,0 +1,140 @@
+# Architecture Decision Record — NeurAI OS
+# ADR-003: Bounded CC disposition authority for explicit objections
+# Accepted by operator: 2026-11-15
+
+decision_id: ADR-003
+date: 2026-11-15
+title: Bounded CC disposition authority for explicit objections
+status: accepted
+accepted_date: 2026-11-15
+decided_by: operator
+amends:
+  - PHASE4-SPEC-001 v1.0.0 sections 4.6, 7.3, 7.5, 9, and 11.3
+  - ADR-002 OQ-D
+  - PHASE4-SPEC-001 addendum 1.1.0, superseded by addendum 1.2.0
+
+context: >-
+  PHASE4-SPEC-001 v1.0.0 correctly prohibits the CC from resolving ordinary
+  material divergence by confidence comparison, evidence aggregation, or
+  unilateral tie-break. It provides no complete path for an explicit
+  adversarial objection that challenges a specific proposal. ADR-002 OQ-D
+  requires such objections to be represented and given a defined procedural
+  effect. The operator has approved a limited authority for the CC to assess
+  whether a proposed action may proceed while an explicit objection remains
+  unresolved, provided that dissent remains visible and all authority and
+  invariant constraints remain binding.
+
+decision:
+  principles:
+    - Ordinary material divergence is not an objection and remains unresolved until new interpretations converge or the operator resolves it.
+    - An explicit objection is a separately recorded deliberative contribution challenging a specific proposal, assumption, interpretation, or consequence.
+    - The CC may make a deterministic procedural disposition of an explicit objection, including permitting a proposal to proceed with recorded dissent or safeguards.
+    - A procedural disposition does not establish that the objection is false, that the proposal is true, or that the hemispheres agree.
+    - The CC must preserve the objection, its evidence, any response, its own assessment, its disposition, and the unresolved-dissent status in append-only records.
+    - The CC must not collapse significance, evidence quality, reversibility, urgency, and consequences of delay into an opaque scalar score.
+    - Urgency may affect deliberation depth and the choice among otherwise permissible actions; it cannot waive invariants, permissions, authority, or required operator authorization.
+    - A verified invariant or authority violation blocks the challenged action. An unverified allegation is not automatically a veto; it triggers verification, deferral, or operator escalation according to policy.
+    - When no defensible permissible course can be established, the CC pauses or defers and requests operator resolution.
+    - A safe interim action is a distinct action with its own target, authorization, invariant checks, audit trail, and verification; it does not silently commit the challenged proposal.
+
+  authority_boundary:
+    permitted:
+      - validate objection structure, provenance, relevance, and objector authority
+      - request a response or further evidence
+      - assess urgency and consequences of delay from referenced evidence and declared task constraints
+      - apply a versioned deterministic objection policy
+      - permit a policy-eligible action to proceed with recorded dissent or safeguards
+      - require subsequent review and verification
+      - defer or reject an action when a deterministic rule requires it
+    prohibited:
+      - declare unresolved hemispheric disagreement resolved
+      - rewrite, suppress, or downgrade an original objection
+      - use confidence values, arrival order, or wall-clock age as tie-breakers
+      - waive an invariant, permission, authority boundary, or operator authorization requirement
+      - infer that an objection is false merely because it is procedurally insufficient
+      - treat absence, timeout, or unavailability of a response as agreement
+      - dispatch an action outside the existing CC-controlled executor route
+
+  decision_state_mapping:
+    pause_for_deliberation: DELIBERATION_REQUIRED
+    request_objection_response: DELIBERATION_REQUIRED
+    proceed_with_recorded_dissent:
+      next_state: existing_authorization_pipeline
+      conditions:
+        - proposal independently passes all invariant checks
+        - action policy explicitly permits proceeding over this objection class
+        - disposition record includes rationale, residual risks, and review conditions
+        - gated actions still require operator authorization
+    proceed_with_safeguards:
+      next_state: existing_authorization_pipeline
+      conditions:
+        - safeguards are explicit, enforceable, and verified before dispatch
+        - proposal independently passes all invariant checks
+        - action policy explicitly permits the disposition
+        - gated actions still require operator authorization
+    take_safe_interim_action:
+      next_state: separate_child_decision
+      conditions:
+        - interim action is independently specified and authorized
+        - parent proposal remains unresolved
+    blocked_by_verified_invariant_or_authority_violation: REJECTED
+    insufficient_basis_or_unverifiable_claim: DEFERRED
+
+  audit_requirements:
+    - Preserve the full original objection as an immutable record.
+    - Preserve response and disposition as separate immutable records.
+    - Record the policy version and hash used for disposition.
+    - Record the CC assessment separately from the objector's claimed significance.
+    - Record all evidence references supporting urgency, harm, reversibility, and invariant verification.
+    - Record unresolved dissent explicitly on any committed decision.
+    - Integrate new event kinds into the existing closed event-kind set and full-record hash-chain envelope.
+
+rationale: >-
+  This grants the CC enough procedural agency to act proportionally without
+  making it an arbiter of truth or consensus. The distinction is between
+  resolving disagreement and deciding whether a particular action is
+  permissible despite unresolved disagreement. The latter can be governed
+  by deterministic policy while the former remains open.
+
+alternatives:
+  - name: retain operator-only resolution for every objection
+    disposition: rejected
+    reason: >-
+      This would preserve the earlier model but make the adversarial objection
+      pathway unable to respond proportionally to urgency or safe interim needs.
+  - name: allow CC to choose the more persuasive hemisphere
+    disposition: rejected
+    reason: >-
+      This would reintroduce the prohibited confidence/evidence tie-break and
+      erase the distinction between procedural authority and epistemic truth.
+  - name: give an objection automatic veto power
+    disposition: rejected
+    reason: >-
+      An automatic veto would create a denial-of-service path and confuse
+      objection preservation with authority to block all action.
+
+affected_invariants:
+  - id: INV-002
+    effect: strengthened; dissent and independent interpretations remain preserved.
+  - id: INV-007
+    effect: unchanged; permissions and authority remain non-waivable.
+  - id: INV-009
+    effect: unchanged; agreement is not substituted for validation or truth.
+  - id: INV-010
+    effect: strengthened; uncertainty and unresolved objections remain explicit.
+
+known_tradeoffs:
+  - >-
+    A deterministic objection policy requires explicit action-class rules and
+    careful conformance tests; it cannot be improvised per incident.
+  - >-
+    Permitting action under unresolved dissent creates residual risk. That
+    risk must be bounded by policy, safeguards, reversibility, and review.
+  - >-
+    A conservative policy may still defer many cases until the operator
+    supplies additional evidence or resolves the conflict.
+
+review_trigger: >-
+  Review after the first implementation of objection disposition, after any
+  incident in which an objection was mishandled, and during the next full
+  architecture conformance evaluation.

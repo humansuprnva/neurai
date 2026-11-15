@@ -1,0 +1,784 @@
+# NeurAI Phase 4 Contract Addendum
+# Addendum version: 1.2.0
+# Applies to: PHASE4-SPEC-001 v1.0.0, as amended by ADR-002 and ADR-003
+# Governing contract: roadmap/neurai-roadmap-1.3.0.yaml
+# Related decisions: ADR-002 (2026-11-13), ADR-003 (accepted 2026-11-15)
+# Status: proposed_for_review; no runtime implementation is claimed.
+#
+# This version supersedes addendum 1.1.0. It preserves the OQ-B, OQ-E,
+# D3/OQ-1, and OQ-D resolutions while reconciling them with the original
+# Phase 4 record, action-policy, state-machine, and audit contracts.
+
+addendum:
+  id: PHASE4-SPEC-001-ADDENDUM-1.2.0
+  version: "1.2.0"
+  status: proposed_for_review
+  supersedes: PHASE4-SPEC-001-ADDENDUM-1.1.0
+  governing_rules:
+    - Original Phase 4 common record envelope and provenance requirements remain mandatory.
+    - Existing Phase 4 fields and meanings are preserved unless an explicit mapping below is defined.
+    - Ordinary material divergence is not resolved by the CC.
+    - Explicit objections receive bounded procedural disposition authority under ADR-003.
+    - Procedural disposition never asserts semantic agreement or truth.
+    - Invariants, permissions, authority boundaries, and operator authorization requirements are non-waivable.
+    - All schemas are closed, versioned, and validated without silent repair or fabricated defaults.
+    - Deliberation has no global or fixed round-count limit.
+    - Surfacing changes visibility only and does not terminate deliberation or change decision state.
+
+  resolution_ADR002_OQ_B:
+    title: Logical action targets and explicit execution-node routing
+    action_payload_schema:
+      schema: neurai.cc/action-payload
+      schema_version: "1.1.0"
+      closed_field_set: true
+      required:
+        - action_type
+        - parameters
+        - target
+        - target_ref
+        - request_id
+        - actor_component_id
+        - execution
+      preserved_phase4_fields:
+        action_type:
+          type: string
+          description: Existing key into the action policy; retained without renaming.
+        parameters:
+          type: object
+          description: Existing action-specific parameters; canonical comparison remains unchanged.
+        target:
+          type: [string, "null"]
+          description: Legacy Phase 4 target retained for compatibility and audit; never sufficient alone for multi-node dispatch.
+        classification_hint:
+          type: [string, "null"]
+          required: false
+          trust: untrusted
+        reversibility_claim:
+          type: [string, "null"]
+          required: false
+          trust: untrusted
+      added_fields:
+        request_id:
+          type: string
+          immutable: true
+        actor_component_id:
+          type: string
+          enum: [HEM-A, HEM-B, CC, EXECUTOR]
+        target_ref:
+          type: object
+          discriminator: kind
+          one_of:
+            - kind: component
+              required: [component_id]
+              properties:
+                component_id: string
+            - kind: node_resource
+              required: [node_id, resource_type, resource_id]
+              properties:
+                node_id: string
+                resource_type: string
+                resource_id: string
+            - kind: shared_resource
+              required: [service_id, resource_id]
+              properties:
+                service_id: string
+                resource_id: string
+        execution:
+          type: object
+          required: [executor_component_id]
+          properties:
+            executor_component_id:
+              type: string
+              const: EXECUTOR
+            requested_node_id:
+              type: string
+              required: false
+            resolved_node_id:
+              type: string
+              required: false
+              writer: CC
+              description: CC-resolved dispatch destination; never authoritative when supplied by a hemisphere.
+      target_policy_identity:
+        derivation:
+          component: "component:<component_id>"
+          node_resource: "node:<node_id>/<resource_type>/<resource_id>"
+          shared_resource: "service:<service_id>/<resource_id>"
+        rules:
+          - The CC derives this identity from target_ref; the proposer cannot supply or override it.
+          - Existing integrity_targets matching is evaluated against this canonical identity or an explicit reviewed policy mapping.
+          - A missing or ambiguous mapping fails closed.
+      canonical_rules:
+        - action_type remains the policy lookup key; it is not renamed to operation.
+        - target_ref is the canonical logical target for new records.
+        - target is retained as a compatibility projection and must match the reviewed deterministic mapping from target_ref when non-null.
+        - classification_hint and reversibility_claim remain untrusted and cannot affect tier derivation.
+        - Existing target-based tier escalation remains in force and is evaluated against target_ref resource identity.
+        - CC validates actor, action_type, parameters, target_ref, constraints, policy, authority, and resolved placement before dispatch.
+        - No hemisphere may call an executor directly or supply an authoritative resolved_node_id.
+        - A missing, unknown, stale, or conflicting node mapping is rejected or deferred; no host is guessed.
+        - Component identity is independent of hostname, IP address, or deployment host.
+        - Node-local resources identify their owning node explicitly.
+        - The resolved node and registry/configuration version are included in the complete audit record.
+      migration:
+        preserve_original_records: true
+        preserve_original_target: true
+        require_reviewed_target_mapping: true
+        unmappable_legacy_targets: unresolved_and_not_dispatchable
+
+  resolution_ADR002_OQ_E:
+    title: Add roadmap-required interpretation fields without removing Phase 4 fields
+    interpretation_record_schema:
+      schema: neurai.cc/interpretation-record
+      schema_version: "1.1.0"
+      closed_field_set: true
+      common_envelope:
+        required:
+          - record_id
+          - schema
+          - schema_version
+          - created_at
+          - provenance
+        provenance_required:
+          - origin
+          - origin_component
+          - derived_from
+      required_fields:
+        - hemisphere_id
+        - task_reference
+        - original_input_reference
+        - intent
+        - perceived_intent
+        - semantic_payload
+        - relevant_context
+        - assumptions
+        - ambiguity
+        - evidence
+        - supporting_evidence
+        - confidence
+        - alternatives_considered
+        - alternatives
+        - unresolved_questions
+      optional_fields: []
+      field_contract:
+        record_id:
+          type: string
+          format: "<kind>-<uuid4hex>"
+        schema:
+          type: string
+          const: neurai.cc/interpretation-record
+        schema_version:
+          type: string
+          const: "1.1.0"
+        created_at:
+          type: string
+          format: date-time
+          timezone: UTC
+          decision_use: evidence_only
+        provenance:
+          type: object
+          required: [origin, origin_component, derived_from]
+          properties:
+            origin:
+              type: string
+              enum: [hemisphere_original, cc_derived, executor_report, operator_record]
+            origin_component:
+              type: string
+              enum: [HEM-A, HEM-B, CC, EXECUTOR, OPERATOR]
+            derived_from:
+              type: array
+              items:
+                type: object
+                required: [record_id, record_hash]
+                properties:
+                  record_id: string
+                  record_hash: string
+        hemisphere_id:
+          type: string
+          enum: [HEM-A, HEM-B]
+        task_reference:
+          type: string
+        original_input_reference:
+          type: string
+        intent:
+          type: string
+          description: Original Phase 4 field; the hemisphere's perceived intent in its own terms.
+        perceived_intent:
+          type: string
+          description: Roadmap-required alias; must equal intent exactly.
+        semantic_payload:
+          type: [ActionPayload, "null"]
+        relevant_context:
+          type: object
+          required: [memory_snapshot_reference]
+          properties:
+            memory_snapshot_reference:
+              type: string
+              immutable: true
+            context_references:
+              type: array
+              items: string
+            task_context_reference:
+              type: string
+              required: false
+        assumptions:
+          type: array
+          items: string
+        ambiguity:
+          type: array
+          items:
+            type: object
+            required: [issue, impact]
+            properties:
+              issue: string
+              impact: string
+              possible_readings:
+                type: array
+                items: string
+        evidence:
+          type: array
+          items: EvidenceRef
+          description: Original Phase 4 typed evidence field; preserved verbatim.
+        supporting_evidence:
+          type: array
+          items: EvidenceRef
+          description: Roadmap-required alias; must equal evidence exactly.
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          trust: self_reported
+          decision_use: prohibited_as_tiebreak
+        alternatives_considered:
+          type: array
+          items: string
+        alternatives:
+          type: array
+          items: string
+          description: Roadmap-required alias; must equal alternatives_considered exactly.
+        unresolved_questions:
+          type: array
+          items: string
+          required: true
+          description: May be empty, but must be present on every new 1.1.0 record.
+      evidence_ref_contract:
+        required:
+          - pointer
+          - source_kind
+          - relevance
+          - reliability
+        properties:
+          pointer: string
+          source_kind:
+            type: string
+            enum: [direct_observation, instrument_reading, memory_record, document, hemisphere_inference, external_report]
+          relevance:
+            type: number
+            minimum: 0.0
+            maximum: 1.0
+          reliability:
+            type: number
+            minimum: 0.0
+            maximum: 1.0
+        rules:
+          - EvidenceRef objects are preserved verbatim.
+          - Evidence is not reduced to counts, aggregate scores, or a hemisphere ranking.
+      cross_field_invariants:
+        - perceived_intent equals intent.
+        - supporting_evidence equals evidence by canonical value.
+        - alternatives equals alternatives_considered.
+        - Both hemispheres receive the identical original input reference and immutable memory snapshot reference for a task.
+        - Common envelope provenance is retained; producing component is recorded as origin_component.
+      migration:
+        from_version: "1.0.0"
+        to_version: "1.1.0"
+        preserve_original_records: true
+        do_not_fabricate_missing_context: true
+        do_not_convert_typed_evidence_to_strings: true
+        rules:
+          - Preserve source bytes, record_id, schema_version, and original field values.
+          - Add roadmap aliases only in a separately versioned migrated view; never mutate immutable originals.
+          - If a required field cannot be reconstructed from authoritative source data, mark the migrated view unavailable and do not admit it as a new valid 1.1.0 record.
+          - New 1.1.0 records must satisfy the full closed field set and cross-field invariants.
+
+  resolution_ADR002_D3_OQ_1:
+    title: Unbounded deliberation and per-action proportional surfacing
+    deliberation_policy:
+      location: action_policy.actions[action_type].deliberation_policy
+      required:
+        - surface_on_first_divergence
+      fields:
+        surface_on_first_divergence:
+          type: boolean
+        surface_after_attempts:
+          type: integer
+          minimum: 1
+          required: false
+        surface_on_material_objection:
+          type: boolean
+          default: true
+          required: false
+        unresolved_objection_policy:
+          type: string
+          enum: [pause, proportional_cc_assessment]
+          default: proportional_cc_assessment
+          required: false
+      rules:
+        - The policy is embedded in each action-type policy entry, not held only in a detached global schema.
+        - If omitted, first divergence is surfaced.
+        - Surfacing is visibility-only; it does not terminate deliberation or alter DecisionState.
+        - No fixed round-count limit is introduced.
+        - Wall-clock age and arrival order are never CC decision inputs.
+        - New deliberation rounds are event-driven by new InterpretationRecords or an authorized operator resolution.
+    audit_event:
+      kind: deliberation_surfaced
+      add_to_closed_event_kind_set: true
+      full_record_envelope: true
+      required_fields:
+        - event_id
+        - decision_id
+        - action_type
+        - surfacing_reason
+        - deliberation_attempt_count
+        - policy_version
+        - timestamp
+      state_effect: none
+    audit_integration:
+      existing_event_kinds_preserved: true
+      added_event_kinds:
+        - deliberation_surfaced
+        - objection_disposition_recorded
+        - objection_response_recorded
+        - objection_status_changed
+      all_events:
+        - retain_existing_hash_chain_fields
+        - embed_complete_event_record
+        - use_existing_append_only_writer
+        - reject_unknown_event_kinds
+
+  resolution_ADR002_OQ_D:
+    title: Explicit objections and bounded CC procedural disposition
+    governing_decision: ADR-003
+    distinction:
+      ordinary_divergence:
+        definition: Materially different interpretations or payloads without an explicit ObjectionRecord.
+        resolution: New interpretations that converge or an authorized OperatorResolutionRecord only.
+        cc_tie_break: prohibited
+      explicit_objection:
+        definition: A first-class, provenance-bearing record that challenges a specific proposal, assumption, interpretation, or consequence.
+        resolution: CC may apply the bounded procedural disposition policy below without claiming semantic resolution.
+    objection_record_schema:
+      schema: neurai.cc/objection-record
+      schema_version: "1.1.0"
+      required:
+        - objection_id
+        - decision_id
+        - objecting_component_id
+        - challenged_proposal_reference
+        - objection_type
+        - grounds
+        - supporting_evidence
+        - potential_consequences
+        - claimed_significance
+        - created_at
+        - provenance
+      fields:
+        objection_id:
+          type: string
+          immutable: true
+        decision_id:
+          type: string
+        objecting_component_id:
+          type: string
+          enum: [HEM-A, HEM-B]
+        challenged_proposal_reference:
+          type: string
+        objection_type:
+          type: string
+          enum: [factual_error, unsupported_assumption, omitted_context, adverse_consequence, invariant_conflict, authority_conflict, procedural_defect, alternative_interpretation, other]
+        grounds:
+          type: string
+        supporting_evidence:
+          type: array
+          items: EvidenceRef
+        potential_consequences:
+          type: array
+          items:
+            type: object
+            required: [description, severity, likelihood]
+            properties:
+              description: string
+              severity:
+                type: string
+                enum: [negligible, low, moderate, high, critical]
+              likelihood:
+                type: string
+                enum: [unknown, unlikely, plausible, likely, established]
+        claimed_significance:
+          type: string
+          enum: [low, moderate, high, critical]
+          description: Objector's claim only; not the CC assessment.
+        created_at:
+          type: string
+          format: date-time
+        provenance:
+          type: object
+          required: [origin, origin_component, derived_from]
+      immutable: true
+    objection_lifecycle:
+      states: [OPEN, RESPONSE_REQUESTED, RESPONDED, DISPOSITIONED, CLOSED]
+      response_status: [NOT_REQUESTED, PENDING, RECEIVED, UNAVAILABLE, DECLINED]
+      rules:
+        - Objection state and response status are separate fields.
+        - No response, a null proposal, unavailable component, and an explicit objection are distinct conditions.
+        - A timeout or unavailable hemisphere is never interpreted as agreement or consent.
+        - A response appends a new record and never overwrites the objection.
+        - Disposition does not erase the objection or imply that it was disproved.
+        - Closure requires a recorded reason and preserves whether dissent remains unresolved.
+    objection_response_schema:
+      schema: neurai.cc/objection-response
+      schema_version: "1.1.0"
+      required:
+        - response_id
+        - objection_id
+        - responding_component_id
+        - response_status
+        - response_reference
+        - supporting_evidence
+        - created_at
+        - provenance
+      fields:
+        response_id:
+          type: string
+          immutable: true
+        objection_id:
+          type: string
+        responding_component_id:
+          type: string
+          enum: [HEM-A, HEM-B, CC, OPERATOR]
+        response_status:
+          type: string
+          enum: [RECEIVED, DECLINED]
+        response_reference:
+          type: string
+          description: Immutable reference to the response content; no response is represented by response_status, not by an empty string.
+        supporting_evidence:
+          type: array
+          items: EvidenceRef
+        created_at:
+          type: string
+          format: date-time
+        provenance:
+          type: object
+          required: [origin, origin_component, derived_from]
+      unavailable_or_missing_response:
+        represented_by: lifecycle_response_status
+        values: [NOT_REQUESTED, PENDING, UNAVAILABLE]
+        rules:
+          - A missing response does not create a fabricated ObjectionResponse record.
+          - UNAVAILABLE requires an auditable availability observation or transport event.
+          - A pending response remains pending until a response, explicit decline, or recorded unavailability.
+    cc_assessment_schema:
+      required:
+        - assessment_id
+        - objection_id
+        - assessed_significance
+        - evidence_quality
+        - harm_assessment
+        - reversibility_assessment
+        - urgency_assessment
+        - invariant_verification
+        - policy_reference
+      fields:
+        assessed_significance:
+          type: string
+          enum: [low, moderate, high, critical, indeterminate]
+        evidence_quality:
+          type: string
+          enum: [limited, moderate, strong, independently_verified, indeterminate]
+        harm_assessment:
+          type: object
+          required: [risk_if_proceeding, risk_if_delayed]
+          properties:
+            risk_if_proceeding:
+              type: object
+              required: [severity, likelihood, evidence]
+              properties:
+                severity:
+                  type: string
+                  enum: [negligible, low, moderate, high, critical, unknown]
+                likelihood:
+                  type: string
+                  enum: [unlikely, plausible, likely, established, unknown]
+                evidence:
+                  type: array
+                  items: EvidenceRef
+            risk_if_delayed:
+              type: object
+              required: [severity, likelihood, evidence]
+              properties:
+                severity:
+                  type: string
+                  enum: [negligible, low, moderate, high, critical, unknown]
+                likelihood:
+                  type: string
+                  enum: [unlikely, plausible, likely, established, unknown]
+                evidence:
+                  type: array
+                  items: EvidenceRef
+        reversibility_assessment:
+          type: string
+          enum: [reversible, partially_reversible, difficult_to_reverse, irreversible, unknown]
+        urgency_assessment:
+          required: [urgency, consequence_of_delay, deadline_evidence]
+          properties:
+            urgency:
+              type: string
+              enum: [routine, time_sensitive, urgent, emergency, indeterminate]
+            consequence_of_delay: string
+            deadline_evidence:
+              type: array
+              items: EvidenceRef
+        invariant_verification:
+          required: [claimed_invariant, verification_status, check_references]
+          properties:
+            claimed_invariant: string
+            verification_status:
+              type: string
+              enum: [verified_violation, not_violated, unresolved, not_applicable]
+            check_references:
+              type: array
+              items: string
+        policy_reference:
+          type: object
+          required: [policy_version, policy_hash, rule_id]
+    disposition_policy:
+      location: action_policy.actions[action_type].objection_policy
+      required_fields:
+        - allow_proceed_with_recorded_dissent
+        - allow_proceed_with_safeguards
+        - require_operator_for_critical_objection
+        - require_subsequent_review
+      decision_rules:
+        - A verified invariant, permission, or authority violation blocks the challenged action; urgency cannot override it.
+        - An unverified invariant allegation is not an automatic veto; it requires verification, deferral, or operator escalation.
+        - If verification is unresolved and potential harm is high, critical, irreversible, or not bounded by enforceable safeguards, pause or defer.
+        - If delay itself creates a documented greater risk, the CC may select only a policy-authorized, least-harmful permissible action.
+        - Proceeding over unresolved dissent requires a recorded rationale, residual risks, safeguards where applicable, and review requirements.
+        - The CC assessment is separate from claimed_significance and does not state that the objection is false.
+        - The CC must not use an opaque aggregate score, confidence comparison, evidence count, arrival order, or wall-clock age.
+        - If the action policy does not explicitly permit proceeding over this objection class, pause or defer.
+        - If the CC cannot establish a defensible permissible course, defer and request operator resolution.
+      deterministic_disposition_order:
+        - rule: verified_boundary_violation
+          condition: invariant_verification.verification_status == verified_violation
+          disposition: blocked_by_verified_invariant_or_authority_violation
+          terminal_state: REJECTED
+        - rule: unresolved_critical_boundary_claim
+          condition: invariant_verification.verification_status == unresolved and invariant_verification.claimed_invariant is not null
+          disposition: defer_for_operator_resolution
+          state: DEFERRED
+        - rule: response_needed_and_available
+          condition: material_objection_has_unanswered_specific_claim and response_status in [NOT_REQUESTED, PENDING] and responding_component_available
+          disposition: request_objection_response
+          state: DELIBERATION_REQUIRED
+        - rule: unresolved_high_or_critical_proceeding_harm
+          condition: risk_if_proceeding severity in [high, critical, unknown] and no enforceable safeguard is validated
+          disposition: pause_for_deliberation
+          state: DELIBERATION_REQUIRED
+        - rule: evidenced_emergency_safe_interim
+          condition: urgency == emergency and risk_if_delayed severity in [high, critical] and risk_if_delayed likelihood in [likely, established] and separately_defined_safe_interim_action_is_policy_authorized
+          disposition: take_safe_interim_action
+          state: separate_child_decision
+        - rule: evidenced_emergency_delay_harm
+          condition: urgency == emergency and risk_if_delayed severity in [high, critical] and risk_if_delayed likelihood in [likely, established] and least_harmful_action_is_policy_authorized
+          disposition: proceed_with_safeguards
+          state: existing_authorization_pipeline
+        - rule: policy_permitted_low_or_moderate_objection
+          condition: assessed_significance in [low, moderate] and risk_if_proceeding severity in [negligible, low, moderate] and action_policy explicitly permits recorded dissent
+          disposition: proceed_with_recorded_dissent
+          state: existing_authorization_pipeline
+        - rule: unresolved_or_unmatched_case
+          condition: no earlier rule applies
+          disposition: defer_for_operator_resolution
+          state: DEFERRED
+      precedence: first_matching_rule
+      constraints:
+        - Rule order is normative and deterministic.
+        - A policy may be stricter than this baseline, never more permissive about invariant, permission, authority, or operator-grant requirements.
+        - Unknown evidence is not treated as proof of low risk.
+        - The CC may not substitute its own unrecorded intuition for a missing policy rule.
+    dispositions:
+      - proceed_with_recorded_dissent
+      - proceed_with_safeguards
+      - request_objection_response
+      - pause_for_deliberation
+      - take_safe_interim_action
+      - blocked_by_verified_invariant_or_authority_violation
+      - defer_for_operator_resolution
+    decision_state_mapping:
+      pause_for_deliberation: DELIBERATION_REQUIRED
+      request_objection_response: DELIBERATION_REQUIRED
+      proceed_with_recorded_dissent: existing_authorization_pipeline
+      proceed_with_safeguards: existing_authorization_pipeline
+      take_safe_interim_action: separate_child_decision
+      blocked_by_verified_invariant_or_authority_violation: REJECTED
+      defer_for_operator_resolution: DEFERRED
+      notes:
+        - Existing action authorization and gated operator-grant requirements remain mandatory.
+        - COMMITTED means permitted/decided, not executed.
+        - Parent decision remains unresolved when a separate safe interim child action is taken.
+        - No disposition may transition a decision to COMMITTED before invariant checks and authorization pass.
+    audit_records:
+      objection_recorded:
+        event_kind: objection_recorded
+        append_only: true
+        full_record: true
+      objection_response_recorded:
+        event_kind: objection_response_recorded
+        append_only: true
+        full_record: true
+      objection_status_changed:
+        event_kind: objection_status_changed
+        append_only: true
+        full_record: true
+        required:
+          - objection_id
+          - prior_status
+          - new_status
+          - response_status
+          - transition_reason
+          - timestamp
+      objection_disposition_recorded:
+        event_kind: objection_disposition_recorded
+        append_only: true
+        full_record: true
+        required:
+          - objection_id
+          - cc_assessment_reference
+          - disposition
+          - rationale
+          - accepted_residual_risks
+          - safeguards
+          - policy_version
+          - policy_hash
+          - unresolved_dissent
+          - subsequent_review_requirement
+      unresolved_dissent:
+        required_on_any_commit_over_objection: true
+        values: [true, false]
+    conformance_tests:
+      - id: ADD12-OBJ-001
+        test: Explicit objection is stored as a first-class immutable record, not a null proposal.
+      - id: ADD12-OBJ-002
+        test: Ordinary divergence cannot be resolved by CC tie-break; only convergence or operator resolution exits it.
+      - id: ADD12-OBJ-003
+        test: No response, unavailable component, null proposal, and explicit objection remain distinct.
+      - id: ADD12-OBJ-004
+        test: Objector claimed significance and CC assessed significance are separately stored.
+      - id: ADD12-OBJ-005
+        test: A verified invariant or authority violation blocks the challenged action regardless of urgency.
+      - id: ADD12-OBJ-006
+        test: An unverified invariant allegation triggers verification or deferral, not automatic rejection.
+      - id: ADD12-OBJ-007
+        test: High or critical harm with unknown or irreversible consequences cannot proceed without explicit policy authorization and safeguards.
+      - id: ADD12-OBJ-008
+        test: Urgency is supported by evidence references and is not inferred from wall-clock age.
+      - id: ADD12-OBJ-009
+        test: Proceeding over dissent records rationale, residual risks, safeguards, policy hash, and subsequent review.
+      - id: ADD12-OBJ-010
+        test: A safe interim action is a separate child decision; parent proposal remains unresolved.
+      - id: ADD12-OBJ-011
+        test: A gated action still requires operator authorization after objection disposition.
+      - id: ADD12-OBJ-012
+        test: A disposition never asserts that dissent was resolved or the objection was false.
+      - id: ADD12-OBJ-013
+        test: Disposition follows the ordered deterministic decision table; unknown risk evidence never defaults to low risk.
+      - id: ADD12-OBJ-014
+        test: Response receipt, explicit decline, pending, and unavailable states are separately represented and append-only.
+
+  phase4_supersession_map:
+    section_4_2_interpretation_record: amended_by_resolution_ADR002_OQ_E
+    section_4_3_action_payload: amended_by_resolution_ADR002_OQ_B
+    section_4_6_decision_state_model: amended_by_resolution_ADR002_OQ_D_decision_state_mapping
+    section_7_3_material_divergence: unchanged_for_ordinary_divergence
+    section_7_5_operator_resolution: unchanged_for_ordinary_divergence; explicit_objection_uses_ADR003
+    section_9_action_policy: extended_with_deliberation_policy_and_objection_policy_per_action_type
+    section_11_3_audit_event_kinds: closed_set_extended_as_listed_above
+    precedence: >-
+      This addendum amends only the listed contracts. All other Phase 4
+      requirements remain in force. Where this addendum is silent, the
+      original Phase 4 specification and governing roadmap remain authoritative.
+
+  conformance_test_registry:
+    id_policy: globally_unique
+    test_ids:
+      - ADD12-ACT-001
+      - ADD12-ACT-002
+      - ADD12-ACT-003
+      - ADD12-ACT-004
+      - ADD12-ACT-005
+      - ADD12-INT-001
+      - ADD12-INT-002
+      - ADD12-INT-003
+      - ADD12-INT-004
+      - ADD12-INT-005
+      - ADD12-DELIB-001
+      - ADD12-DELIB-002
+      - ADD12-DELIB-003
+      - ADD12-OBJ-001
+      - ADD12-OBJ-002
+      - ADD12-OBJ-003
+      - ADD12-OBJ-004
+      - ADD12-OBJ-005
+      - ADD12-OBJ-006
+      - ADD12-OBJ-007
+      - ADD12-OBJ-008
+      - ADD12-OBJ-009
+      - ADD12-OBJ-010
+      - ADD12-OBJ-011
+      - ADD12-OBJ-012
+      - ADD12-OBJ-013
+      - ADD12-OBJ-014
+    action_routing_tests:
+      - id: ADD12-ACT-001
+        test: Node-local target without owning node_id is rejected.
+      - id: ADD12-ACT-002
+        test: Unknown or stale node mapping is rejected or deferred; no host is guessed.
+      - id: ADD12-ACT-003
+        test: Existing action_type, parameters, target, classification_hint, and reversibility_claim semantics remain intact.
+      - id: ADD12-ACT-004
+        test: Hemisphere cannot dispatch directly to an executor.
+      - id: ADD12-ACT-005
+        test: Audit records actor, target_ref, resolved node, executor, and registry version.
+    interpretation_tests:
+      - id: ADD12-INT-001
+        test: New record retains all original Phase 4 fields and includes roadmap-required relevant_context and ambiguity.
+      - id: ADD12-INT-002
+        test: Alias fields match exactly and EvidenceRef remains a typed object.
+      - id: ADD12-INT-003
+        test: Both hemispheres use identical original input and memory snapshot references.
+      - id: ADD12-INT-004
+        test: Migration preserves immutable originals and never fabricates missing context.
+      - id: ADD12-INT-005
+        test: unresolved_questions is required but may be an empty list on a new record.
+    deliberation_tests:
+      - id: ADD12-DELIB-001
+        test: No global or fixed deliberation round limit is enforced.
+      - id: ADD12-DELIB-002
+        test: Surfacing changes visibility only and leaves decision state unchanged.
+      - id: ADD12-DELIB-003
+        test: deliberation_policy is embedded in every action-type policy entry or defaults to first-divergence surfacing.
+    implementation_boundary:
+      documented_not_implemented:
+        - runtime_node_registry
+        - authenticated_node_transport
+        - executor_service
+        - CC_dispatch_enforcement
+        - SQLite_interpretation_record_storage
+        - automated_schema_migration
+        - objection_lifecycle_runtime
+        - objection_disposition_runtime
+      prerequisites_before_multi_node_execution:
+        - private_network_segment
+        - mutual_authentication
+        - integrity_protected_transport
