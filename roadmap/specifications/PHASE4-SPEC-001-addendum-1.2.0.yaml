@@ -1,7 +1,7 @@
 # NeurAI Phase 4 Contract Addendum
 # Addendum version: 1.2.0
 # Applies to: PHASE4-SPEC-001 v1.0.0, as amended by ADR-002 and ADR-003
-# Governing contract: roadmap/neurai-roadmap-1.2.0.yaml
+# Governing contract: roadmap/neurai-roadmap-1.3.0.yaml
 # Related decisions: ADR-002 (2026-11-13), ADR-003 (accepted 2026-11-15)
 # Status: proposed_for_review; no runtime implementation is claimed.
 #
