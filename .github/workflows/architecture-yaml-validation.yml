@@ -48,9 +48,9 @@ jobs:
           ids = addendum["conformance_test_registry"]["test_ids"]
           assert len(ids) == len(set(ids)), "Duplicate conformance test IDs in registry"
           test_groups = [
-              addendum["action_routing_tests"],
-              addendum["interpretation_tests"],
-              addendum["deliberation_tests"],
+              addendum["conformance_test_registry"]["action_routing_tests"],
+              addendum["conformance_test_registry"]["interpretation_tests"],
+              addendum["conformance_test_registry"]["deliberation_tests"],
               addendum["resolution_ADR002_OQ_D"]["conformance_tests"],
           ]
           actual_ids = [test["id"] for group in test_groups for test in group]
