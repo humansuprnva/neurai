@@ -98,6 +98,15 @@ addendum:
               required: false
               writer: CC
               description: CC-resolved dispatch destination; never authoritative when supplied by a hemisphere.
+      target_policy_identity:
+        derivation:
+          component: "component:<component_id>"
+          node_resource: "node:<node_id>/<resource_type>/<resource_id>"
+          shared_resource: "service:<service_id>/<resource_id>"
+        rules:
+          - The CC derives this identity from target_ref; the proposer cannot supply or override it.
+          - Existing integrity_targets matching is evaluated against this canonical identity or an explicit reviewed policy mapping.
+          - A missing or ambiguous mapping fails closed.
       canonical_rules:
         - action_type remains the policy lookup key; it is not renamed to operation.
         - target_ref is the canonical logical target for new records.
@@ -443,8 +452,35 @@ addendum:
           type: string
           enum: [limited, moderate, strong, independently_verified, indeterminate]
         harm_assessment:
-          type: array
-          items: object
+          type: object
+          required: [risk_if_proceeding, risk_if_delayed]
+          properties:
+            risk_if_proceeding:
+              type: object
+              required: [severity, likelihood, evidence]
+              properties:
+                severity:
+                  type: string
+                  enum: [negligible, low, moderate, high, critical, unknown]
+                likelihood:
+                  type: string
+                  enum: [unlikely, plausible, likely, established, unknown]
+                evidence:
+                  type: array
+                  items: EvidenceRef
+            risk_if_delayed:
+              type: object
+              required: [severity, likelihood, evidence]
+              properties:
+                severity:
+                  type: string
+                  enum: [negligible, low, moderate, high, critical, unknown]
+                likelihood:
+                  type: string
+                  enum: [unlikely, plausible, likely, established, unknown]
+                evidence:
+                  type: array
+                  items: EvidenceRef
         reversibility_assessment:
           type: string
           enum: [reversible, partially_reversible, difficult_to_reverse, irreversible, unknown]
@@ -488,6 +524,37 @@ addendum:
         - The CC must not use an opaque aggregate score, confidence comparison, evidence count, arrival order, or wall-clock age.
         - If the action policy does not explicitly permit proceeding over this objection class, pause or defer.
         - If the CC cannot establish a defensible permissible course, defer and request operator resolution.
+      deterministic_disposition_order:
+        - rule: verified_boundary_violation
+          condition: invariant_verification.verification_status == verified_violation
+          disposition: blocked_by_verified_invariant_or_authority_violation
+          terminal_state: REJECTED
+        - rule: unresolved_critical_boundary_claim
+          condition: invariant_verification.verification_status == unresolved and claimed_invariant is material
+          disposition: defer_for_operator_resolution
+          state: DEFERRED
+        - rule: unresolved_high_or_critical_proceeding_harm
+          condition: risk_if_proceeding severity in [high, critical, unknown] and no enforceable safeguard is validated
+          disposition: pause_for_deliberation
+          state: DELIBERATION_REQUIRED
+        - rule: evidenced_emergency_delay_harm
+          condition: urgency == emergency and risk_if_delayed severity in [high, critical] and risk_if_delayed likelihood in [likely, established] and least_harmful_action_is_policy_authorized
+          disposition: proceed_with_safeguards
+          state: existing_authorization_pipeline
+        - rule: policy_permitted_low_or_moderate_objection
+          condition: assessed_significance in [low, moderate] and risk_if_proceeding severity in [negligible, low, moderate] and action_policy explicitly permits recorded dissent
+          disposition: proceed_with_recorded_dissent
+          state: existing_authorization_pipeline
+        - rule: unresolved_or_unmatched_case
+          condition: no earlier rule applies
+          disposition: defer_for_operator_resolution
+          state: DEFERRED
+        precedence: first_matching_rule
+        constraints:
+          - Rule order is normative and deterministic.
+          - A policy may be stricter than this baseline, never more permissive about invariant, permission, authority, or operator-grant requirements.
+          - Unknown evidence is not treated as proof of low risk.
+          - The CC may not substitute its own unrecorded intuition for a missing policy rule.
     dispositions:
       - proceed_with_recorded_dissent
       - proceed_with_safeguards
@@ -603,6 +670,7 @@ addendum:
       - ADD12-OBJ-010
       - ADD12-OBJ-011
       - ADD12-OBJ-012
+      - ADD12-OBJ-013
     action_routing_tests:
       - id: ADD12-ACT-001
         test: Node-local target without owning node_id is rejected.
