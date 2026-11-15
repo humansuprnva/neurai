@@ -348,6 +348,7 @@ addendum:
         - deliberation_surfaced
         - objection_disposition_recorded
         - objection_response_recorded
+        - objection_status_changed
       all_events:
         - retain_existing_hash_chain_fields
         - embed_complete_event_record
@@ -433,6 +434,49 @@ addendum:
         - A response appends a new record and never overwrites the objection.
         - Disposition does not erase the objection or imply that it was disproved.
         - Closure requires a recorded reason and preserves whether dissent remains unresolved.
+    objection_response_schema:
+      schema: neurai.cc/objection-response
+      schema_version: "1.1.0"
+      required:
+        - response_id
+        - objection_id
+        - responding_component_id
+        - response_status
+        - response_reference
+        - supporting_evidence
+        - created_at
+        - provenance
+      fields:
+        response_id:
+          type: string
+          immutable: true
+        objection_id:
+          type: string
+        responding_component_id:
+          type: string
+          enum: [HEM-A, HEM-B, CC, OPERATOR]
+        response_status:
+          type: string
+          enum: [RECEIVED, DECLINED]
+        response_reference:
+          type: string
+          description: Immutable reference to the response content; no response is represented by response_status, not by an empty string.
+        supporting_evidence:
+          type: array
+          items: EvidenceRef
+        created_at:
+          type: string
+          format: date-time
+        provenance:
+          type: object
+          required: [origin, origin_component, derived_from]
+      unavailable_or_missing_response:
+        represented_by: lifecycle_response_status
+        values: [NOT_REQUESTED, PENDING, UNAVAILABLE]
+        rules:
+          - A missing response does not create a fabricated ObjectionResponse record.
+          - UNAVAILABLE requires an auditable availability observation or transport event.
+          - A pending response remains pending until a response, explicit decline, or recorded unavailability.
     cc_assessment_schema:
       required:
         - assessment_id
@@ -585,6 +629,17 @@ addendum:
         event_kind: objection_response_recorded
         append_only: true
         full_record: true
+      objection_status_changed:
+        event_kind: objection_status_changed
+        append_only: true
+        full_record: true
+        required:
+          - objection_id
+          - prior_status
+          - new_status
+          - response_status
+          - transition_reason
+          - timestamp
       objection_disposition_recorded:
         event_kind: objection_disposition_recorded
         append_only: true
@@ -671,6 +726,7 @@ addendum:
       - ADD12-OBJ-011
       - ADD12-OBJ-012
       - ADD12-OBJ-013
+      - ADD12-OBJ-014
     action_routing_tests:
       - id: ADD12-ACT-001
         test: Node-local target without owning node_id is rejected.
