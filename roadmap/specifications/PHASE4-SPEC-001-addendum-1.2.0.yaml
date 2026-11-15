@@ -593,12 +593,12 @@ addendum:
           condition: no earlier rule applies
           disposition: defer_for_operator_resolution
           state: DEFERRED
-        precedence: first_matching_rule
-        constraints:
-          - Rule order is normative and deterministic.
-          - A policy may be stricter than this baseline, never more permissive about invariant, permission, authority, or operator-grant requirements.
-          - Unknown evidence is not treated as proof of low risk.
-          - The CC may not substitute its own unrecorded intuition for a missing policy rule.
+      precedence: first_matching_rule
+      constraints:
+        - Rule order is normative and deterministic.
+        - A policy may be stricter than this baseline, never more permissive about invariant, permission, authority, or operator-grant requirements.
+        - Unknown evidence is not treated as proof of low risk.
+        - The CC may not substitute its own unrecorded intuition for a missing policy rule.
     dispositions:
       - proceed_with_recorded_dissent
       - proceed_with_safeguards
