@@ -574,13 +574,21 @@ addendum:
           disposition: blocked_by_verified_invariant_or_authority_violation
           terminal_state: REJECTED
         - rule: unresolved_critical_boundary_claim
-          condition: invariant_verification.verification_status == unresolved and claimed_invariant is material
+          condition: invariant_verification.verification_status == unresolved and invariant_verification.claimed_invariant is not null
           disposition: defer_for_operator_resolution
           state: DEFERRED
+        - rule: response_needed_and_available
+          condition: material_objection_has_unanswered_specific_claim and response_status in [NOT_REQUESTED, PENDING] and responding_component_available
+          disposition: request_objection_response
+          state: DELIBERATION_REQUIRED
         - rule: unresolved_high_or_critical_proceeding_harm
           condition: risk_if_proceeding severity in [high, critical, unknown] and no enforceable safeguard is validated
           disposition: pause_for_deliberation
           state: DELIBERATION_REQUIRED
+        - rule: evidenced_emergency_safe_interim
+          condition: urgency == emergency and risk_if_delayed severity in [high, critical] and risk_if_delayed likelihood in [likely, established] and separately_defined_safe_interim_action_is_policy_authorized
+          disposition: take_safe_interim_action
+          state: separate_child_decision
         - rule: evidenced_emergency_delay_harm
           condition: urgency == emergency and risk_if_delayed severity in [high, critical] and risk_if_delayed likelihood in [likely, established] and least_harmful_action_is_policy_authorized
           disposition: proceed_with_safeguards
@@ -683,6 +691,10 @@ addendum:
         test: A gated action still requires operator authorization after objection disposition.
       - id: ADD12-OBJ-012
         test: A disposition never asserts that dissent was resolved or the objection was false.
+      - id: ADD12-OBJ-013
+        test: Disposition follows the ordered deterministic decision table; unknown risk evidence never defaults to low risk.
+      - id: ADD12-OBJ-014
+        test: Response receipt, explicit decline, pending, and unavailable states are separately represented and append-only.
 
   phase4_supersession_map:
     section_4_2_interpretation_record: amended_by_resolution_ADR002_OQ_E
