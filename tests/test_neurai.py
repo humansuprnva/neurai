@@ -27,14 +27,24 @@ def test_tasks_notes_files(tmp_path=None):
     a.handle("done task giant")
     assert "No open tasks" in a.handle("my tasks")["answer"]
     import tempfile, os
-    d = tempfile.mkdtemp(); p = os.path.join(d, "x.txt")
+    # B11: file writes go to the agent's home directory (approved data path, B8).
+    p = os.path.join(str(a.m.base), "x.txt")
     assert "Wrote" in a.handle(f"write file {p} saying hello neurai")["answer"]
     assert "hello neurai" in a.handle(f"read file {p}")["answer"]
 
-def test_shell_full_control():
+def test_shell_operator_opt_in_and_default_off():
+    # B11 rewrite of test_shell_full_control: shell is OFF by default and
+    # is a local-operator opt-in (allow_shell=True or NEURAI_ALLOW_SHELL=1),
+    # not full control for every caller. The opt-in still gives the local
+    # operator both the "run" and "!" escapes.
+    import tempfile, os
     a = fresh()
-    assert "neurai-shell-ok" in a.handle("run echo neurai-shell-ok")["answer"]
-    assert "neurai-shell-ok" in a.handle("!echo neurai-shell-ok")["answer"]
+    d = tempfile.mkdtemp(); marker = os.path.join(d, "ran.txt")
+    assert "shell disabled" in a.handle(f"run echo neurai-shell-ok > {marker}")["answer"]
+    assert not os.path.exists(marker), "shell must not run without operator opt-in"
+    a2 = Agent(memory=Memory(base=tempfile.mkdtemp()), allow_shell=True)
+    assert "neurai-shell-ok" in a2.handle("run echo neurai-shell-ok")["answer"]
+    assert "neurai-shell-ok" in a2.handle("!echo neurai-shell-ok")["answer"]
 
 def test_self_improvement_distils_skills():
     a = fresh()
@@ -51,23 +61,15 @@ def test_recall_scoring():
     hits = a.m.recall("bubble guar")
     assert hits and "guar" in hits[0]["text"]
 
-def test_agentic_spawn():
-    import time
+def test_spawn_disabled_pending_isolation():
+    # B11 rewrite of test_agentic_spawn: spawning is disabled pending
+    # isolation (B6). spawn_list (read-only) still works.
     a = fresh()
     out = a.handle("spawn calculate 21 * 2")
-    assert "Spawned agent-" in out["answer"], out["answer"]
-    # parallel spawn of two more
-    a.handle("parallel: calculate 1 + 1; calculate 3 * 3")
-    deadline = time.time() + 30; done = []
-    while time.time() < deadline:
-        spawns = a.t.spawn_list()["spawns"]
-        done = [s for s in spawns if s["status"] == "done"]
-        if len(done) >= 3: break
-        time.sleep(0.5)
-    assert len(done) >= 3, a.t.spawn_list()
-    answers = " ".join(s.get("answer") or "" for s in done)
-    assert "42" in answers and "9" in answers, answers
-    assert "finished" in a.handle("spawn result last")["answer"] or "→" in a.handle("spawn result last")["answer"]
+    assert "disabled" in out["answer"], out["answer"]
+    out = a.handle("parallel: calculate 1 + 1; calculate 3 * 3")
+    assert "disabled" in out["answer"], out["answer"]
+    assert a.t.spawn_list() == {"spawns": []}
 
 FAKE_MODE = {"mode": "good"}
 def _fake_ollama():
@@ -137,7 +139,10 @@ def test_no_brain_falls_back_to_planner():
     a.brain = N.LLMBrain.__new__(N.LLMBrain); a.brain.model = None; a.brain.bin = None; a.brain._ollama_ok = False
     assert "GB" in a.handle("disk")["answer"]
 
-def test_self_patch_and_rollback():
+def test_self_patch_disabled_and_rollback_preserved():
+    # B11 rewrite of test_self_patch_and_rollback: self-patching is
+    # disabled until the core is factored (B7); rollback is the preserved,
+    # protected recovery path, and it still restores a backup exactly.
     import os, shutil
     d = tempfile.mkdtemp(); target = pathlib.Path(d) / "neurai_copy.py"
     src = pathlib.Path(__file__).parent.parent / "neurai" / "neurai.py"
@@ -145,22 +150,28 @@ def test_self_patch_and_rollback():
     os.environ["NEURAI_SELF_PATH"] = str(target)
     try:
         a = fresh()
-        before = target.read_text()
         r = a.t.self_patch('VERSION = "2.0.0"', 'VERSION = "2.0.0"  # self-edited')
-        assert "patched" in r, r
-        assert "self-edited" in target.read_text()
-        import py_compile; py_compile.compile(str(target), doraise=True)
-        bad = a.t.self_patch('VERSION = "2.0.0"  # self-edited', 'def broken(:')
-        assert "error" in bad  # syntax guard rejects
-        assert "self-edited" in target.read_text()  # unchanged after bad patch
+        assert "error" in r, r
+        assert "self-edited" not in target.read_text(), "self-patch must be refused"
+        bdir = a.m.base / "backups"; bdir.mkdir(parents=True, exist_ok=True)
+        (bdir / "neurai_copy.py.self.1234567890.bak").write_text('VERSION = "1.0.0"\n')
+        target.write_text('VERSION = "2.0.0"  # changed\n')
         rb = a.t.self_rollback()
-        assert "rolled_back_to" in rb and target.read_text() == before
+        assert "rolled_back_to" in rb and target.read_text() == 'VERSION = "1.0.0"\n'
         assert a.m.data["self_changes"], "self changes must be logged"
     finally:
         os.environ.pop("NEURAI_SELF_PATH", None)
 
-def test_sys_write_with_backup():
-    a = fresh(); p = pathlib.Path(tempfile.mkdtemp()) / "etc" / "hostname"
+def test_sys_write_home_only_with_backup():
+    # B11 rewrite of test_sys_write_with_backup: arbitrary system writes
+    # are disabled (B8); writes are confined to the NeurAI home directory,
+    # where the backup behaviour is preserved.
+    a = fresh()
+    outside = pathlib.Path(tempfile.mkdtemp()) / "etc" / "hostname"
+    r = a.t.sys_write(str(outside), "neurai-os\n")
+    assert "error" in r, r
+    assert not outside.exists(), "sys_write must not escape the home directory"
+    p = a.m.base / "etc" / "hostname"
     r1 = a.t.sys_write(str(p), "neurai-os\n"); assert r1["written"] == str(p)
     r2 = a.t.sys_write(str(p), "neurai-two\n")
     assert r2["backup"] and pathlib.Path(r2["backup"]).read_text() == "neurai-os\n"
