@@ -12,6 +12,27 @@ export HOME=/root NEURAI_HOME=/var/lib/neurai PATH=/usr/local/bin:/bin:/usr/bin:
 export NEURAI_MODEL_PATH=/usr/local/lib/neurai/models/model.gguf NEURAI_LLAMA_BIN=/usr/local/lib/neurai/llama/llama-completion
 mkdir -p /var/lib/neurai /root /tmp; chmod 1777 /tmp
 
+# Recovery (B9, refined): a boot failure NEVER drops silently to a root
+# shell. Recovery is entered only by explicit operator action at the
+# physical console: type RECOVERY within 30 seconds of the prompt.
+# Anything else - no input, a wrong answer, or no console - halts the
+# machine. Legitimate recovery access is preserved; accidental,
+# unauthenticated root-shell access is eliminated.
+neurai_recovery() {
+  echo "[NeurAI] FATAL: $1"
+  echo "[NeurAI] Recovery shell is available only by explicit operator action."
+  echo "[NeurAI] Type RECOVERY within 30 seconds to enter a root shell;"
+  echo "[NeurAI] otherwise this machine will halt."
+  ans=""
+  read -t 30 ans 2>/dev/null
+  if [ "$ans" = "RECOVERY" ]; then
+    echo "[NeurAI] operator-confirmed recovery shell"
+    exec sh
+  fi
+  echo "[NeurAI] halting."
+  poweroff -f 2>/dev/null || halt -f 2>/dev/null || while true; do sleep 3600; done
+}
+
 echo ""
 echo "  _   _                      ___ ___ "
 echo " | \\ | | ___ _   _ _ __ __ _|_ _/ _ \\"
@@ -28,14 +49,14 @@ for i in eth0 enp0s3 ens33; do ip link set $i up 2>/dev/null; udhcpc -i $i -n -q
 # Recurring self-improvement daemon + local web console (localhost only)
 if [ -x /usr/bin/python3 ]; then
   python3 /usr/local/lib/neurai/neurai.py --daemon >>/var/log/neurai-daemon.log 2>&1 &
-  python3 /usr/local/lib/neurai/neurai.py --serve 8080 >>/var/log/neurai-web.log 2>&1 &
-  echo "[NeurAI] daemon + web console (http://127.0.0.1:8080) started"
+  # B4: the web console is NOT auto-started (security baseline: disabled
+  # by default). The operator starts it explicitly with NEURAI_WEB_CONSOLE=1.
+  echo "[NeurAI] daemon started (web console disabled by default)"
   # Primary console = talk to the AI
   while true; do
     python3 /usr/local/lib/neurai/neurai.py || sleep 2
     echo "[NeurAI] shell restarted (the OS does not exit when the shell does)"
   done
 else
-  echo "[NeurAI] python3 missing - dropping to busybox shell"
-  exec sh
+  neurai_recovery "python3 missing"
 fi

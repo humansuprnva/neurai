@@ -19,8 +19,8 @@ form{display:flex;gap:8px;padding:14px;border-top:1px solid var(--line)}input{fl
 <button onclick="ask('system info')">System info</button><button onclick="ask('disk')">Disk space</button>
 <button onclick="ask('what\'s running')">What's running</button><button onclick="ask('my tasks')">My tasks</button>
 <button onclick="ask('what do you remember')">What do you remember?</button><button onclick="ask('reflect')">Run self-improvement</button>
-<button onclick="ask('spawn calculate 99 * 99')">Spawn an agent</button><button onclick="ask('list spawns')">List spawned agents</button><button onclick="ask('spawn result last')">Last spawn result</button>
-<h3>How it works</h3><p style="color:var(--dim);font-size:13px;line-height:1.6">The AI is the interface. It plans locally, runs tools with full system control, remembers you, and distils repeated successes into skills every 10 interactions. Type <b>run …</b> or <b>!cmd</b> for direct shell.</p></aside>
+<button onclick="ask('spawn calculate 99 * 99')" disabled title="Disabled by the security baseline (pending isolation)">Spawn an agent (disabled)</button><button onclick="ask('list spawns')">List spawned agents</button><button onclick="ask('spawn result last')">Last spawn result</button>
+<h3>How it works</h3><p style="color:var(--dim);font-size:13px;line-height:1.6">The AI is the interface. It plans locally, runs read-only tools, tasks and notes, remembers you, and distils repeated successes into skills every 10 interactions. Shell and spawning are restricted by the security baseline: shell is local-operator opt-in only, spawning is disabled.</p></aside>
 <section style="display:flex;flex-direction:column"><div id="log" style="flex:1"></div>
 <form id="f"><input id="i" placeholder="Say what you want — e.g. 'remember that my project is Bubble Lab' or 'add task test the bubbles'" autocomplete="off"><button class="send">Ask NeurAI</button></form></section>
 </main>

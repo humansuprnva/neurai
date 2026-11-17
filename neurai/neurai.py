@@ -10,10 +10,17 @@ Design (v2):
   fallback when no model is present.
 - The interface is a conversation, not menus: NeurAI speaks first with a
   briefing, works visibly (actions listed), and takes initiative.
-- Autonomy: a heartbeat observes the system, pursues the user's goals,
-  auto-executes safe housekeeping, and queues bigger initiatives for
-  approval. It has direct write access to its own codebase and system
-  files, guarded by backups + syntax check + rollback.
+ - Autonomy: a heartbeat observes the system, pursues the user's goals,
+  and queues initiatives for approval. (Security baseline 2026-11-16:
+  the AUTO tier is propose-only; unattended destructive actions are
+  disabled. See SECURITY-BASELINE-MILESTONE.md.)
+- Containment: the runtime no longer grants the model, the web console,
+  or spawned agents shell / file-write / self-patch authority. Shell is
+  local-operator opt-in only; writes are confined to the NeurAI home
+  directory (resolved paths); self-patching is disabled until the core
+  is factored; spawned agents are disabled pending isolation; the web
+  console is disabled by default. This is a temporary containment
+  configuration, NOT the CC authority model.
 - Recurring self-improvement: episodes are logged, repeated patterns
   become skills, failed phrasings become learned intent rules, and a
   daemon reflects + acts on a schedule.
@@ -24,6 +31,37 @@ from pathlib import Path
 from collections import Counter, defaultdict
 
 VERSION = "2.0.0"
+
+# ---------------- Security baseline (containment, 2026-11-16) ----------------
+# Temporary containment configuration, NOT the CC authority model.
+# Rules (each covered by a regression test in tests/test_security_baseline.py):
+#  * shell: local-operator opt-in only (NEURAI_ALLOW_SHELL=1); never for
+#    LLM, web, or spawned origins.
+#  * LLM tool loop: no shell, fs_write, sys_write, self_patch.
+#  * planner shell/file escapes: refused for web and spawned origins.
+#  * spawned agents: disabled pending isolation.
+#  * AUTO autonomy tier: propose-only (no reflect side effects, no deletes).
+#  * writes: confined to the NeurAI home directory, resolved paths
+#    (symlink-safe), never the core file, backup store, or integrity volume.
+#  * self-patching: disabled until the core is factored.
+#  * web console: disabled by default (NEURAI_WEB_CONSOLE=1 to start it).
+#  * installer: never invoked from the runtime — B1–B3 close the path
+#    (no LLM/web/spawn shell), and no runtime code references the
+#    installer at all (B10). A local operator may still run it by hand.
+# Request origins are "local" (REPL/CLI), "web" (HTTP console), "spawn"
+# (child agent worker), or "llm" (model-proposed tool call). Origin is
+# stamped on every dispatched step by Agent.handle / Agent.llm_handle
+# and enforced in Agent._exec. It is a containment label, not governance.
+
+def _resolve_within(path, root):
+    """Resolve `path` (symlinks included) and require it to lie inside
+    resolved `root`. Returns the resolved Path, or None if it escapes."""
+    try:
+        rp = Path(path).expanduser().resolve()
+        rr = Path(root).expanduser().resolve()
+    except Exception:
+        return None
+    return rp if (rp == rr or rr in rp.parents) else None
 
 def home_dir():
     return Path(os.environ.get("NEURAI_HOME", str(Path.home() / ".neurai")))
@@ -101,7 +139,7 @@ class Memory:
 
 # ---------------- Tools (full visibility & control) ----------------
 class Tools:
-    def __init__(self, memory, allow_shell=True):
+    def __init__(self, memory, allow_shell=False):
         self.m = memory; self.allow_shell = allow_shell
     def sys_info(self):
         return {"os": platform.platform(), "kernel": platform.release(), "arch": platform.machine(),
@@ -135,8 +173,37 @@ class Tools:
         p = Path(path).expanduser()
         if not p.is_file(): return {"error": f"not a file: {path}"}
         return {"path": str(p), "content": p.read_text(errors="replace")[:max_chars]}
+    # B8 (refined): writes are confined to the NeurAI home directory on
+    # RESOLVED paths — a string-prefix check would let a symlink inside
+    # the home directory point a write outside it. These paths are refused
+    # even inside the home directory: the core file, the backup store,
+    # and the integrity volume (when set).
+    def _protected_path(self, resolved):
+        if resolved == self.self_path().resolve():
+            return "the NeurAI core file"
+        backups = (self.m.base / "backups").resolve()
+        if resolved == backups or backups in resolved.parents:
+            return "the backup store"
+        integ = os.environ.get("NEURAI_INTEGRITY_DIR")
+        if integ:
+            ip = Path(integ).resolve()
+            if resolved == ip or ip in resolved.parents:
+                return "the integrity volume"
+        return None
+
+    def _check_writable(self, path):
+        resolved = _resolve_within(path, self.m.base)
+        if resolved is None:
+            return None, f"writes are restricted to the NeurAI home directory ({self.m.base})"
+        reason = self._protected_path(resolved)
+        if reason:
+            return None, f"refusing to write {reason} (security baseline)"
+        return resolved, None
+
     def fs_write(self, path, content, append=False):
-        p = Path(path).expanduser(); p.parent.mkdir(parents=True, exist_ok=True)
+        p, err = self._check_writable(path)
+        if err: return {"error": err}
+        p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(p.read_text() + content if append and p.exists() else content)
         return {"path": str(p), "bytes": p.stat().st_size}
     def fs_search(self, root=".", query=""):
@@ -177,6 +244,12 @@ class Tools:
     def _spawns_dir(self):
         d = self.m.base / "spawns"; d.mkdir(parents=True, exist_ok=True); return d
     def spawn_agent(self, task):
+        # B6: spawning is DISABLED by the security baseline, pending
+        # isolation. A child agent would inherit the full core, so no
+        # spawn may be created until children run isolated with bounded
+        # capabilities. This is temporary; see the milestone doc.
+        return {"error": "spawning is disabled by the security baseline (pending isolation)"}
+        # --- disabled implementation kept below for reference, never reached ---
         """Spin up a child agent process to work on `task` in parallel.
         The child inherits a copy of current memory (personalisation),
         works in its own memory sandbox (no write races), and writes
@@ -211,6 +284,16 @@ class Tools:
         src = p.read_text(errors="replace")
         return {"path": str(p), "lines": src.count("\n") + 1, "source_head": src[:max_chars]}
     def self_patch(self, old, new):
+        # B7 (refined): self-modification is DISABLED until the core is
+        # factored. self_patch can only ever target neurai.py itself, and
+        # neurai.py currently contains the backup store, the rollback
+        # mechanism and the authority-enforcement machinery — a patch to
+        # it could rewrite the very machinery that is supposed to
+        # protect recovery. The implementation is kept unreachable below
+        # for the factoring work; rollback (below) is the preserved,
+        # protected recovery path.
+        return {"error": "self-modification is disabled by the security baseline until the core is factored (neurai.py, backup store, rollback mechanism and authority-enforcement machinery are protected)"}
+        # --- disabled implementation kept below for reference, never reached ---
         """Rewrite part of NeurAI's own code. Exact-match, single occurrence.
         Stages the edit, syntax-checks it, backs up, swaps in, logs the change.
         On any failure the original stays untouched."""
@@ -229,10 +312,16 @@ class Tools:
         self.m.save()
         return {"patched": str(p), "backup": str(bak), "note": "takes effect on restart, or immediately for data-driven behaviour"}
     def self_rollback(self):
+        # B7: rollback is PRESERVED and PROTECTED. It restores only a
+        # backup that resolves inside the backup store — a symlink
+        # pointing elsewhere is refused, so rollback cannot be turned
+        # into an arbitrary-file write.
         bdir = self.m.base / "backups"
         backs = sorted(bdir.glob(self.self_path().name + ".self.*.bak")) if bdir.exists() else []
         if not backs: return {"error": "no backups to roll back to"}
-        shutil.copy2(backs[-1], self.self_path())
+        target = _resolve_within(backs[-1], bdir)
+        if target is None: return {"error": "refusing rollback: backup escapes the backup store"}
+        shutil.copy2(target, self.self_path())
         self.m.data["self_changes"].append({"at": now_iso(), "kind": "rollback", "from": str(backs[-1])}); self.m.save()
         return {"rolled_back_to": str(backs[-1])}
     def sys_read(self, path):
@@ -240,12 +329,17 @@ class Tools:
         if not p.is_file(): return {"error": f"not a file: {path}"}
         return {"path": path, "content": p.read_text(errors="replace")[:4000]}
     def sys_write(self, path, content):
-        """Write any system file (the OS runs as root). Original is backed up first."""
-        p = Path(path); bak = None
+        """Write a file inside the NeurAI home directory. The OS runs as
+        root, but arbitrary system writes are DISABLED by the security
+        baseline (B8): the same resolved-path confinement as fs_write
+        applies. Original is backed up first."""
+        p, err = self._check_writable(path)
+        if err: return {"error": err}
+        bak = None
         if p.exists(): bak = self._backup(p, "sys")
         p.parent.mkdir(parents=True, exist_ok=True); p.write_text(content)
-        self.m.data["self_changes"].append({"at": now_iso(), "kind": "sys_write", "path": path, "backup": str(bak) if bak else None}); self.m.save()
-        return {"written": path, "bytes": p.stat().st_size, "backup": str(bak) if bak else None}
+        self.m.data["self_changes"].append({"at": now_iso(), "kind": "sys_write", "path": str(p), "backup": str(bak) if bak else None}); self.m.save()
+        return {"written": str(p), "bytes": p.stat().st_size, "backup": str(bak) if bak else None}
     def spawn_result(self, sid):
         f = self._spawns_dir() / f"{sid}.json"
         if not f.exists():
@@ -260,24 +354,25 @@ class Tools:
 TOOL_SPEC = """Tools (call ONE per reply, as JSON only):
 {"tool":"sys_info"} {"tool":"sys_mem"} {"tool":"sys_disk"} {"tool":"sys_ps"}
 {"tool":"fs_list","args":{"path":"..."}} {"tool":"fs_read","args":{"path":"..."}}
-{"tool":"fs_write","args":{"path":"...","content":"..."}} {"tool":"fs_search","args":{"query":"..."}}
-{"tool":"shell","args":{"cmd":"..."}} {"tool":"calc","args":{"expr":"..."}}
+{"tool":"fs_search","args":{"query":"..."}}
+{"tool":"calc","args":{"expr":"..."}}
 {"tool":"task_add","args":{"title":"..."}} {"tool":"task_list"} {"tool":"task_done","args":{"ref":"..."}}
 {"tool":"note_add","args":{"title":"...","body":"..."}} {"tool":"note_list"}
 {"tool":"remember","args":{"fact":"..."}} {"tool":"recall_all"}
-{"tool":"spawn","args":{"task":"..."}} {"tool":"spawn_list"}
+{"tool":"spawn_list"}
 {"tool":"goal_add","args":{"title":"..."}} {"tool":"goal_list"}
-{"tool":"self_read"} {"tool":"self_patch","args":{"old":"exact code","new":"replacement code"}}
-{"tool":"sys_write","args":{"path":"<real path>","content":"..."}} {"tool":"sys_read","args":{"path":"<real path>"}}
+{"tool":"self_read"} {"tool":"sys_read","args":{"path":"<real path>"}}
 For disk space questions always use sys_disk. For listing a folder use fs_list with a real path like "." or "/home".
 Example - User asks about disk space -> you reply {"tool":"sys_disk"} and wait for its real figures before answering.
 When the task is complete, reply with {"answer":"..."} and nothing else."""
 
 SYSTEM_PROMPT = """You are NeurAI, the operating system itself. The user talks to you in natural
-language and you run their computer: you have full visibility and control.
-Work autonomously: break requests into steps, use tools, check results, and
-keep going until the job is done. Be concise and concrete. Never invent
-tool results - only state what tools returned.
+language and you run their computer: you have read access, calculations,
+tasks, notes and memory. Shell access, file writes, and self-modification
+are restricted by the security baseline and are not available to you.
+Work autonomously within those limits: break requests into steps, use
+tools, check results, and keep going until the job is done. Be concise
+and concrete. Never invent tool results - only state what tools returned.
 """ + TOOL_SPEC
 
 class LLMBrain:
@@ -350,7 +445,12 @@ def extract_json(text):
 # ---------------- Agent (LLM-first, planner fallback) ----------------
 class Agent:
     """Agentic loop: understand -> plan -> act (tools) -> observe -> answer -> reflect."""
-    def __init__(self, memory=None, allow_shell=True, brain=None):
+    def __init__(self, memory=None, allow_shell=None, brain=None, origin="local"):
+        # B2: shell is off unless the local operator explicitly opts in
+        # (allow_shell=True, or NEURAI_ALLOW_SHELL=1 in the environment).
+        if allow_shell is None:
+            allow_shell = os.environ.get("NEURAI_ALLOW_SHELL") == "1"
+        self.origin = origin  # "local" | "web" | "spawn" — where requests come from
         self.m = memory or Memory(); self.t = Tools(self.m, allow_shell)
         self.brain = brain if brain is not None else LLMBrain()
     # ---- planning: deterministic local intent planner (no cloud, no weights to load)
@@ -446,9 +546,12 @@ class Agent:
                 if actions: answer += "\n— actions: " + "; ".join(actions)
                 return {"answer": answer, "intents": ["llm"] + actions, "results": [], "version": VERSION, "engine": self.brain.engine()}
             tool = obj.get("tool"); args = obj.get("args") or {}
-            known = {"sys_info","sys_mem","sys_disk","sys_ps","fs_list","fs_read","fs_write","fs_search","shell","calc",
-                     "task_add","task_list","task_done","note_add","note_list","remember","recall_all","spawn","spawn_list",
-                     "goal_add","goal_list","self_read","self_patch","sys_write","sys_read"}
+            # B1: the LLM tool set excludes shell, fs_write, sys_write and
+            # self_patch. If the model asks for one, it is told the tool
+            # does not exist for it and must answer without it.
+            known = {"sys_info","sys_mem","sys_disk","sys_ps","fs_list","fs_read","fs_search","calc",
+                     "task_add","task_list","task_done","note_add","note_list","remember","recall_all","spawn_list",
+                     "goal_add","goal_list","self_read","sys_read"}
             if tool not in known:
                 scratch += f"\nThere is no tool called '{tool}'. Choose one from the tool list, or reply with the final answer JSON."
                 continue
@@ -461,7 +564,7 @@ class Agent:
                 scratch += f"\nYou already called {tool} with those exact arguments and it returned: {last_summary}\nDo NOT repeat it. Reply with the final answer JSON now."
                 continue
             seen.add(key)
-            result = self._exec({"intent": tool, **{k: v for k, v in args.items()}})
+            result = self._exec({"intent": tool, "origin": "llm", **{k: v for k, v in args.items()}})
             if "error" not in result: results_log.append((tool, result))
             summary = json.dumps(result, default=str)[:600]
             last_summary = summary
@@ -471,9 +574,14 @@ class Agent:
         return {"answer": "I worked through several steps (" + "; ".join(actions) + ") and hit my step limit before finishing. Ask me to continue and I'll pick up from there.",
                 "intents": ["llm"] + actions, "results": [], "version": VERSION, "engine": self.brain.engine()}
     # ---- execution
-    def handle(self, text):
+    def handle(self, text, origin=None):
+        # origin: "local" (REPL/CLI, default), "web" (HTTP console) or
+        # "spawn" (child agent). It is stamped on every planner step and
+        # enforced in _exec (B3). The LLM path always uses origin "llm".
+        origin = origin or self.origin
         low0 = text.strip().lower()
-        # Direct-control escape hatches always stay instant & deterministic
+        # Direct-control escape hatches stay deterministic for the LOCAL
+        # operator only; _exec refuses them for web/spawn origins (B3).
         if text.strip().startswith("!") or low0.startswith("run "):
             pass  # planner path below handles these
         elif self.brain is not None and self.brain.available() and not os.environ.get("NEURAI_NO_LLM"):
@@ -486,6 +594,7 @@ class Agent:
                 pass  # fall through to the planner - the OS never goes mute
         steps = self.plan(text); results = []; intent_names = []
         for st in steps:
+            st["origin"] = origin
             i = st["intent"]; intent_names.append(i); self.m.data["stats"]["tool_calls"] += 1
             try: results.append((i, self._exec(st)))
             except Exception as e: results.append((i, {"error": str(e)}))
@@ -513,6 +622,18 @@ class Agent:
         return {"answer": answer, "intents": intent_names, "results": results, "version": VERSION}
     def _exec(self, st):
         i = st["intent"]; t = self.t
+        origin = st.get("origin", self.origin)
+        # B1 (defence in depth): an LLM-originated request may never invoke
+        # shell, file writes, system writes or self-patching, even if a
+        # future code path dispatches it. The llm_handle known-set above
+        # is the first gate; this is the second.
+        if origin == "llm" and i in ("shell", "fs_write", "sys_write", "self_patch"):
+            return {"error": f"{i} is not available to the language model (security baseline)"}
+        # B3 (refined): planner shell/file escapes are a LOCAL-operator
+        # privilege only. Web and spawned origins are refused; the local
+        # REPL keeps them (shell still subject to the B2 opt-in).
+        if origin in ("web", "spawn") and i in ("shell", "fs_write"):
+            return {"error": f"{i} is not available to {origin} requests (security baseline: local operator only)"}
         if i == "sys_info": return t.sys_info()
         if i == "sys_mem": return t.sys_mem()
         if i == "sys_disk": return t.sys_disk()
@@ -568,10 +689,10 @@ class Agent:
         if i == "help": return ("I am NeurAI, the OS itself. Talk to me in plain language. I can:\n"
             "• System: 'system info', 'disk', 'memory usage', 'what's running'\n"
             "• Files: 'list files', 'read file X', 'search files for X', 'write file X saying …'\n"
-            "• Run anything: 'run <command>' or prefix with !  (I have full shell control)\n"
+            "• Run anything (local operator only, and only with NEURAI_ALLOW_SHELL=1): 'run <command>' or prefix with !\n"
             "• Tasks & notes: 'add task …', 'my tasks', 'note: …', 'list notes'\n"
             "• Memory: 'remember that …', 'my name is …', 'what do you remember'\n"
-            "• Spawn agents: 'spawn <task>' runs a child agent in parallel, 'parallel: task A; task B' spawns several, 'list spawns' / 'spawn result <id>' collects them\n"
+            "• Spawn agents: disabled by the security baseline (pending isolation). 'list spawns' still lists earlier spawns.\n"
             "• Math: 'calculate 12 * (3 + 4)'  • Self-growth: 'reflect' (I also self-improve automatically every 10 interactions)")
         if i == "set_name": return f"Got it — I'll call you {r['name']}."
         if i == "remember": return f"Remembered: {r['remembered']}"
@@ -632,9 +753,11 @@ class Agent:
 
 # ---------------- Autonomy: observe -> decide -> act, on its own initiative ----------------
 class Autonomy:
-    """Heartbeat engine. AUTO tier = safe, reversible housekeeping NeurAI
-    just does. PROPOSE tier = bigger moves queued as initiatives for the
-    user to approve with 'approve initiative N'."""
+    """Heartbeat engine. PROPOSE tier = moves queued as initiatives for the
+    user to approve with 'approve initiative N'. (B5: the AUTO tier is
+    disabled — this tick performs no side effects beyond queueing
+    initiatives and recording its own run. No memory consolidation, no
+    deletion of spawn sandboxes, unattended.)"""
     def __init__(self, agent): self.a = agent; self.m = agent.m
     def observe(self):
         t = self.a.t
@@ -647,17 +770,20 @@ class Autonomy:
         if any(x["text"] == text and x["status"] == "pending" for x in self.m.data["initiatives"]): return False
         self.m.data["initiatives"].append({"text": text, "command": command, "status": "pending", "at": now_iso()}); return True
     def tick(self):
-        snap = self.observe(); did, queued = [], []
-        # AUTO: consolidate memory when episodes pile up
+        # B5: propose-only. Nothing here mutates state except queueing
+        # initiatives and recording this run in last_autonomy.
+        snap = self.observe(); did, queued, noticed = [], [], []
+        # PROPOSE: consolidate memory when episodes pile up
         if snap["episodes"] >= 40:
-            self.m.reflect(); did.append("consolidated memory (self-improvement pass)")
-        # AUTO: clean stale spawn sandboxes older than 7 days
+            if self._queue("Consolidate memory: episodes have piled up - run a self-improvement pass", "reflect"): queued.append("memory consolidation")
+        # NOTICE: stale spawn sandboxes are reported, never deleted here.
         sdir = self.m.base / "spawns"
         if sdir.exists():
             import time as _t
-            for d in sdir.iterdir():
-                if d.is_dir() and _t.time() - d.stat().st_mtime > 7 * 86400:
-                    shutil.rmtree(d, ignore_errors=True); did.append(f"cleaned stale spawn sandbox {d.name}")
+            stale = [d.name for d in sdir.iterdir()
+                     if d.is_dir() and _t.time() - d.stat().st_mtime > 7 * 86400]
+            if stale:
+                noticed.append(f"{len(stale)} stale spawn sandbox(es) older than 7 days: {', '.join(stale)} (review with 'list spawns'; delete manually)")
         # PROPOSE: disk pressure
         if snap["disk"].get("free_gb", 99) < 2:
             if self._queue(f"Disk is nearly full ({snap['disk'].get('free_gb')} GB free) - clean caches and temp files", "run find /tmp -type f -mtime +7 -delete"): queued.append("disk cleanup")
@@ -685,10 +811,11 @@ class Autonomy:
                 if obj and obj.get("initiative") and obj.get("command"):
                     if self._queue(str(obj["initiative"])[:160], str(obj["command"])[:200]): queued.append("brain initiative")
             except Exception: pass
-        self.m.data["last_autonomy"] = {"at": now_iso(), "did": did, "queued": queued}
+        self.m.data["last_autonomy"] = {"at": now_iso(), "did": did, "queued": queued, "noticed": noticed}
         self.m.save()
         summary = ("did: " + "; ".join(did) if did else "no auto actions") + " | proposed: " + ("; ".join(queued) if queued else "nothing new")
-        return {"summary": summary, "did": did, "queued": queued, "snapshot_tasks": len(snap["open_tasks"])}
+        if noticed: summary += " | noticed: " + "; ".join(noticed)
+        return {"summary": summary, "did": did, "queued": queued, "noticed": noticed, "snapshot_tasks": len(snap["open_tasks"])}
 
 # ---------------- Optional local LLM rephrase (Ollama, localhost only) ----------------
 # Toggle: NEURAI_REPHRASE=1 (off by default - costs RAM, purely cosmetic).
@@ -746,6 +873,11 @@ def briefing(agent):
 
 def repl(agent):
     print(briefing(agent))
+    # B2: shell is local-operator opt-in only. Say so up front so the
+    # operator is never surprised that run/! is refused.
+    if not agent.t.allow_shell:
+        print("Shell commands (run … / !cmd) are disabled by the security baseline.")
+        print("To enable them in this REPL, restart with NEURAI_ALLOW_SHELL=1.")
     name = agent.m.data["profile"].get("name") or "you"
     while True:
         try: line = input(f"\n{name}> ").strip()
@@ -755,7 +887,22 @@ def repl(agent):
         if line.lower() in ("quit", "exit"): break
         print("\nNeurAI: " + agent.handle(line)["answer"])
 
+def _memory_summary(agent):
+    """Counts only — the web console never exposes full memory contents."""
+    d = agent.m.data
+    return {"facts": len(d["facts"]), "tasks_open": len([t for t in d["tasks"] if not t["done"]]),
+            "notes": len(d["notes"]), "goals_active": len([g for g in d["goals"] if g["status"] == "active"]),
+            "interactions": d["stats"]["interactions"], "skills": len(d["skills"])}
+
 def serve(agent, port=8080):
+    # B4: the web console is disabled by default. It starts only when the
+    # local operator explicitly opts in (NEURAI_WEB_CONSOLE=1). Even then,
+    # /api/chat requests run as origin "web" (B3) and /api/memory returns
+    # counts only, never the full memory contents.
+    if os.environ.get("NEURAI_WEB_CONSOLE") != "1":
+        print("NeurAI web console is disabled by the security baseline.")
+        print("To start it, run with NEURAI_WEB_CONSOLE=1.")
+        return
     from http.server import BaseHTTPRequestHandler, HTTPServer
     ui = (Path(__file__).parent / "ui.html")
     class H(BaseHTTPRequestHandler):
@@ -768,16 +915,18 @@ def serve(agent, port=8080):
                 self._send(200, ui.read_text() if ui.exists() else "<h1>NeurAI</h1>", "text/html")
             elif self.path == "/api/status": self._send(200, json.dumps(agent._exec({"intent": "status"})))
             elif self.path == "/api/briefing": self._send(200, json.dumps({"briefing": briefing(agent)}))
-            elif self.path == "/api/memory": self._send(200, json.dumps(agent.m.data))
+            elif self.path == "/api/memory": self._send(200, json.dumps(_memory_summary(agent)))  # B4: counts only
             else: self._send(404, "{}")
         def do_POST(self):
             if self.path == "/api/chat":
                 n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}")
-                out = agent.handle(body.get("message",""))
+                out = agent.handle(body.get("message",""), origin="web")  # B3: web origin
                 self._send(200, json.dumps({"answer": out["answer"], "intents": out["intents"]}))
             else: self._send(404, "{}")
     print(f"NeurAI web console on http://127.0.0.1:{port}")
-    HTTPServer(("127.0.0.1", port), H).serve_forever()
+    srv = HTTPServer(("127.0.0.1", port), H)
+    agent._web_server = srv  # lets tests (and the operator) shut it down
+    srv.serve_forever()
 
 def daemon(agent, interval=None):
     interval = interval or int(os.environ.get("NEURAI_AUTONOMY_INTERVAL", "300"))
@@ -785,12 +934,16 @@ def daemon(agent, interval=None):
     auto = Autonomy(agent)
     while True:
         time.sleep(interval)
-        print("[NeurAI daemon] reflect:", agent.m.reflect())
+        # B5: the daemon never reflects or deletes unattended; tick() is
+        # propose-only. Consolidation happens only when the operator runs
+        # --reflect or approves the queued initiative.
         print("[NeurAI daemon] autonomy:", auto.tick()["summary"])
 
 def agent_worker(sid, task):
     """Child-agent entry point: run one task, write result for the parent."""
-    a = Agent()
+    # B6: a worker runs as origin "spawn" with shell forced off, so even a
+    # directly-invoked worker cannot reach planner shell escapes (B3).
+    a = Agent(origin="spawn", allow_shell=False)
     out = a.handle(task)
     # result file lives in the PARENT's spawns dir: NEURAI_HOME is spawns/<sid>
     result_file = home_dir().parent / f"{sid}.json"
