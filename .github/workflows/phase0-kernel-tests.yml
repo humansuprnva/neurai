@@ -1,0 +1,31 @@
+name: Phase-0 kernel experiment tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/phase0_kernel/**"
+      - "tests/test_phase0_kernel.py"
+      - ".github/workflows/phase0-kernel-tests.yml"
+  push:
+    branches: [integration/phase0-kernel-experiment]
+    paths:
+      - "experiments/phase0_kernel/**"
+      - "tests/test_phase0_kernel.py"
+      - ".github/workflows/phase0-kernel-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run isolated Phase-0 kernel tests
+        run: python -m unittest discover -s tests -p "test_phase0_kernel.py" -v
+      - name: Compile experiment module
+        run: python -m py_compile experiments/phase0_kernel/kernel.py
