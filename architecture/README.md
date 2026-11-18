@@ -2,7 +2,7 @@
 
 Phase-0 scaffolding for NeurAI OS, built 2026-11-04. This directory is the
 repository-level foundation prescribed by **PHASE-0** of the governing
-roadmap (`roadmap/neurai-roadmap-1.2.0.yaml`, as amended by ADR-001 and ADR-002):
+roadmap (`roadmap/neurai-roadmap-1.3.0.yaml`, as amended by ADR-001, ADR-002, and ADR-003):
 *architecture specification, component interfaces, configuration schema,
 invariant registry, decision and change record formats, and a test harness.*
 
@@ -10,12 +10,13 @@ invariant registry, decision and change record formats, and a test harness.*
 
 - The **roadmap is the contract**. Everything here is an executable,
   machine-checkable restatement of it. If anything in this directory ever
-  conflicts with `roadmap/neurai-roadmap-1.2.0.yaml`, the roadmap governs
+  conflicts with `roadmap/neurai-roadmap-1.3.0.yaml`, the roadmap governs
   and the file here is the defect.
 - Roadmap and evaluation originals are **not** duplicated or replaced:
-  - Roadmap: `roadmap/neurai-roadmap-1.2.0.yaml` (1.0.0 preserved alongside)
+  - Roadmap: `roadmap/neurai-roadmap-1.3.0.yaml` (versions 1.0.0–1.2.0 preserved)
   - Authority decision: `roadmap/decisions/ADR-001-capability-first-authority.yaml`
   - Topology, hemisphere, and deliberation decision: `roadmap/decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml`
+  - Bounded objection-disposition decision: `roadmap/decisions/ADR-003-bounded-cc-objection-disposition.yaml`
   - Conformance baseline: `roadmap/evaluation-v2.0.0.yaml` (EVAL-2026-11-02-001)
 - Status at creation: v2.0.0 is a functional prototype that does **not**
   meet the rubric release gates (EVAL-2026-11-02-001). PHASE-0 was
@@ -71,6 +72,10 @@ The Corpus Callosum governance phase starts from three clean entry points:
 - **No enforcement claims.** Permission enforcement, the decision log,
   and the authority registry's runtime behavior are later phases; this
   scaffolding defines their contracts and data, not their code.
+
+## Experimental implementation
+
+The isolated Phase-0 cognitive-kernel experiment lives in `experiments/phase0_kernel/`. It is not a production component and does not mark any roadmap invariant as implemented. See its README for boundaries and compatibility notes.
 
 ## Running the checks
 

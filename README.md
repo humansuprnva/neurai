@@ -17,10 +17,10 @@ implementing ADR-001's gated tier at the disk level) is recorded in
 ## Project status and governing architecture
 
 This project is governed by an architectural contract:
-**`roadmap/neurai-roadmap-1.2.0.yaml`** — the NeurAI OS Architectural
+**`roadmap/neurai-roadmap-1.3.0.yaml`** — the NeurAI OS Architectural
 Roadmap and Evaluation Rubric (v1.0.0 operator-supplied 2026-11-02;
-v1.1.0 amends it via ADR-001; v1.2.0 via ADR-002; earlier versions are
-preserved alongside).
+v1.1.0 amends it via ADR-001; v1.2.0 via ADR-002; v1.3.0 via ADR-003;
+earlier versions are preserved alongside).
 The roadmap defines the intended architecture — one unified entity with
 two independent cognitive hemispheres and a deterministic Corpus
 Callosum governance layer — plus 12 foundational invariants, a phased
@@ -164,8 +164,8 @@ wraps it in the dual BIOS+UEFI GRUB image.
 - `neurai/ui.html` — web console UI
 - `rootfs/init` — PID 1: mounts, network, daemon, web console, AI shell
 - `tests/` — unit/integration suite, real-LLM test, QEMU boot test
+- `experiments/phase0_kernel/` — isolated dual-interpreter experiment; not production runtime
 - `roadmap/` — the governing architecture contract and its records:
-  `neurai-roadmap-1.2.0.yaml` (current), `neurai-roadmap-1.1.0.yaml` and
-  `neurai-roadmap-1.0.0.yaml` (preserved), `evaluation-v2.0.0.yaml`
-  (conformance evaluation), `decisions/ADR-001-capability-first-authority.yaml`,
-  `decisions/ADR-002-cluster-topology-hemisphere-disposition-deliberation.yaml`
+  `neurai-roadmap-1.3.0.yaml` (current), versions 1.0.0–1.2.0 (preserved),
+  `evaluation-v2.0.0.yaml` (conformance evaluation), and
+  `decisions/ADR-001`, `ADR-002`, and `ADR-003`.
